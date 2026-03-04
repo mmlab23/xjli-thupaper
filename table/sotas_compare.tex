@@ -1,0 +1,26 @@
+\begin{table*}
+    \caption{在 SoulDance 数据集和 AIST++ 数据集上，不同方法的实验结果}
+    \label{tab:sotas_compare}
+    \resizebox{\linewidth}{!}{
+        \begin{tabular}{lcccccccccccccc}
+            \toprule [1pt]
+            \multirow{2}{*}{Method}&
+            \multicolumn{8}{c}{SoulDance Dataset} & \multicolumn{6}{c}{AIST++ Dataset} \\  \cmidrule(lr){2-9} \cmidrule(lr){10-15}
+            \noalign{\smallskip}
+            & FID $\downarrow $& FID$_h$ $\downarrow$ & Div $\uparrow$ & Div$_h$ $\uparrow $& MM $\uparrow $& MMR-MS $\downarrow$ & BAS $\uparrow $& EAS $\uparrow$ & FID $\downarrow $& Div $\uparrow$ & MM $\uparrow $&MMR-MS $\downarrow$ & BAS $\uparrow $&Run Time $\downarrow $ \\
+            \noalign{\smallskip}\midrule[0.5pt]
+            \noalign{\smallskip}
+            Ground Truth & - & - & 1.322  &5.713 &-& 0.319 & 0.253 & -& - & 0.663 & - & 0.486 & 0.237 & -\\
+            \midrule [0.5pt]
+            FACT~\cite{li2021ai} & 1.008 & 0.408 & 0.646  &0.799 &0.656& 0.685 & 0.221 & 0.358 & 0.138 & 0.654 & 0.722 & 0.702 & 0.213 & 1.782\\
+            Bailando~\cite{siyao2022bailando} & 1.379 & 2.244 & 1.307  &2.126 &1.117& 0.585 & 0.236 & 0.401 & 11.079 & 3.512 & \textbf{3.071} & 0.707 & 0.229 & 0.289\\
+            EDGE~\cite{tseng2023edge} & 2.619 & 3.694 & 0.723  &4.025 &0.745& 0.716 & 0.241 & 0.246 & 21.370 & 1.562 & 1.397 & 0.687 & 0.233 & 1.521\\
+            FineNet~\cite{li2023finedance} & 1.463 & 2.524 & 1.262  &3.448 &0.832& 0.694 & 0.213 & 0.263 & 3.127 & \textbf{3.836} & 0.885 & 0.696 & 0.223 & 1.637\\
+            \midrule [0.5pt]
+            \textbf{SoulNet (w/o. MMR)} & 0.048 & 1.454 & 1.303  &\textbf{4.178} &1.289& 0.418 & 0.240 & 0.435 & 0.206 & 0.698 & 0.855 & 0.714 & 0.232 & 0.086\\
+            \textbf{SoulNet} & \textbf{0.029} & \textbf{0.375} & \textbf{1.312}  &3.423 &\textbf{1.310}& \textbf{0.369} & \textbf{0.244} & \textbf{0.594} & \textbf{0.081} & 1.649 & 1.359 & \textbf{0.580} & \textbf{0.242} & \textbf{0.086} \\
+            \bottomrule [1pt] 
+            %\noalign{\smallskip}
+        \end{tabular}
+        } 
+\end{table*}

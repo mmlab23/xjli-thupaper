@@ -1,0 +1,225 @@
+\chapter{基于视角迭代自注意力控制的数字人外观生成}
+\section{本章引言}
+三维数字人舞蹈内容生成的另一项核心挑战在于数字人外观的个性化编辑与生成。外观不仅决定了数字人的视觉辨识度，也是影响整体舞蹈表现力与真实感的重要因素。
+% 围绕数字人外观的编辑与定制，现有方法主要可归纳为两种典型范式：其一是基于纹理的编辑方式，即在数字人白模对应的二维 UV 贴图空间中进行修改，通过调整颜色、材质细节或图案分布来实现外观变化；其二是基于模型参数的编辑方式，直接在三维白模上对几何形状、比例或材质相关的参数进行参数化调整，并通过优化模型参数以达到目标外观的修改效果。这两种范式分别在表达能力、编辑灵活性与实现复杂度方面各具优势，也共同构成了当前数字人外观个性化生成研究的重要基础。
+
+现有个性化外观编辑方法主要可归纳为两类范式：基于模型的方法与基于注意力的方法。基于模型的方法~\cite{brooks2022instructpix2pix,chen2023anydoor,yang2022paint}通常依赖构建数据集并对整个模型进行微调，从而带来较大的时间与算力开销。为避免昂贵的训练成本，近年来提出了基于注意力的方法~\cite{hertz2022prompt,mokady2022null,cao2023masactrl,parmar2023zero}，其核心思想是在扩散模型的 UNet 中直接操控注意力机制。Prompt-to-Prompt~\cite{hertz2022prompt}通过仅编辑文本提示词，并在扩散过程中注入跨注意力（cross-attention）图实现图像编辑。MasaCtrl~\cite{cao2023masactrl}利用互自注意力（mutual self-attention），从源图像中查询相关的局部内容与纹理，从而实现非刚性且一致的图像编辑。面向视频与三维场景等其他视觉模态的编辑方法，多建立在上述图像编辑技术之上~\cite{instructnerf2023,ceylan2023pix2video}。然而，现有个性化视觉编辑方法在效率、稳定性与跨场景适用性方面仍面临若干关键挑战：
+\begin{itemize}
+\item \textbf{外观身份保持受限。} 仅依赖文本描述进行控制时，文本本身存在固有的歧义性与表达不精确性，往往导致生成结果在外观细节与身份特征上偏离用户期望~\cite{cao2023masactrl}。此外，在多数文生图扩散模型中，即便对提示词进行微小调整，也可能引发显著的外观变化~\cite{hertz2022prompt}，从而难以稳定地保持目标主体的外观身份一致性。
+
+\item \textbf{训练代价高且推理效率受限。} 现有基于反演或微调的方法通常依赖冗长的 DDIM 反演（inversion）或额外的模型参数更新过程，这不仅显著增加了计算开销，还可能导致潜空间表示逐步偏离原始轨迹，从而产生不理想的重建与编辑结果~\cite{mokady2022null}。这类方法在实际应用中难以满足用户快速进行个性化人物或场景个性化编辑的需求。
+
+\item \textbf{多视角一致性不足，泛化能力受限。} 现有方法大多针对单视角或静态图像设计，难以在跨视角或时序生成过程中保持外观与结构的一致性（multi-view consistency）。当直接应用于视频或三维场景编辑任务时，往往会出现外观漂移、视角不连续等问题，限制了其向更复杂视觉表征形式的泛化能力。
+\end{itemize}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/show_res.pdf}
+  % \vspace{-5mm}
+  \caption{VisCtrl方法在二维图片中的编辑效果示例}
+  % \vspace{-5mm}
+  \label{fig:visctrl_show_res}
+\end{figure}
+
+% VisCtrl在多种对象类别与图像域上均取得良好效果，体现了方法的广泛适用性 从简单对象（卡通、Logo）到复杂主体（食物、人像），个性化图像编辑结果的多样性表明，我们的框架能够在不同使用场景下保持良好的通用性与鲁棒性。
+
+为应对上述挑战，本文提出视角迭代自注意力控制(View Iterative Self-Attention Control, VisCtrl)，一种简洁且有效的框架，利用自注意力将参考图片中个性化主体特征注入到目标图像中。具体而言，本文首先通过 DDIM 反演~\cite{song2021ddim}分别获得参考图像与目标图像对应的初始噪声；随后在去噪重建过程中，采用迭代式自注意力机制，将用户指定主体的特征逐步注入目标图像，同时利用跨注意力机制维持目标图像的整体结构不变。进一步地，本文提出特征渐进采样策略(Feature Gradually Sampling, FGS)策略以支持复杂视觉编辑：该策略通过对参考图像的潜变量特征进行随机采样，实现三维多视角编辑。值得注意的是，在无需重训练、仅使用单张参考图像的条件下，本文方法仍可通过较少的去噪步数获得图~\ref{fig:visctrl_show_res}所示的优异结果。
+
+通过大量实验验证了所提出方法的有效性，并显示其向其他个性化视觉任务拓展的潜力。本章主要贡献总结如下：
+
+\begin{itemize}
+\item 本章提出无需训练的个性化视觉编辑框架，仅依赖单张参考图像即可完成人物或场景外观定制，在显著降低训练代价的同时实现高效推理，为实际应用场景提供了良好的可扩展性。
+
+\item 本章提出迭代式自注意力控制机制，在生成过程中联合参考图像及其对应的文本条件，对外观特征进行逐步注入与约束，从而有效保持目标主体的外观身份一致性，并避免对整体结构与布局的破坏。
+
+\item 本章提出特征渐进采样策略，通过在多次迭代中平滑融合来自不同视角的外观信息，显著提升生成结果在跨视角与时序场景下的视角一致性，从而将所提出的框架自然拓展至视频与三维场景编辑等复杂视觉任务中。
+
+\end{itemize}
+
+\section{视角迭代自注意力控制}
+\subsection{扩散模型与反演}
+潜空间扩散模型（Latent Diffusion Models） ~\cite{Rombach_2022_CVPR_stablediffusion} 主要由两部分组成：自编码器与潜空间扩散模型。自编码器中的编码器 $\encoder$ 将输入图像 $\inputimage$ 映射为潜变量代码 $z_0=\encoder(\inputimage)$，解码器则将潜变量代码还原为图像，满足 $\decoder(\encoder(\inputimage)) \approx \inputimage$。令 $\textembedding=\conditioner(\textprompt)$ 表示条件机制，将文本条件 $\textprompt$ 映射为 LDM 的条件向量，则 LDM 的训练目标可写为：
+\begin{equation}
+L_{LDM} := \mathbb{E}_{z_0 \sim \encoder(\inputimage), \textprompt, \epsilon \sim \mathcal{N}(0, 1), t \sim \text{U}(1,T) }\Big[ \Vert \epsilon - \model(z_{t},t, \textembedding) \Vert_{2}^{2}\Big], \, 
+\label{eq:ldm_loss}
+\end{equation}
+其中去噪网络 $\model$ 通常为条件 U-Net~\cite{ronneberger2015unet}，用于在时间步 $t$ 预测所加的高斯噪声 $\epsilon$。文本生成图像扩散模型~\cite{saharia2022photorealistic, ramesh2022hierarchical, rombach2022high,nichol2021glide} 通常采用式~\ref{eq:ldm_loss} 进行训练，即在给定文本提示 $\textprompt$ 的条件下，使 $\model$ 学习估计噪声。
+
+
+DDIM 反演~\cite{song2021ddim}的目标是在给定文本条件 $\textprompt$ 的情况下，寻找一个初始噪声 $z_T$，使其能够重建输入潜变量代码 $z_0$。由于本文的目标是结合参考图像实现对给定图像的精确重建，我们采用确定性 DDIM 采样（deterministic DDIM sampling）~\cite{song2021ddim}：
+\begin{equation}
+z_{t+1} = \sqrt{\bar{\alpha}*{t+1}}f*\theta(z_t,t,\textembedding) + \sqrt{1-\bar{\alpha}*{t+1}} \model(z_t,t,\textembedding)
+\label{eq:ddim}
+\end{equation}
+其中 $\bar{\alpha}*{t+1}$ 为 DDIM~\cite{song2021ddim} 中定义的噪声缩放系数，$f_\theta(z_t,t,\textembedding)$ 用于预测最终去噪后的潜变量代码 $z_0$，其形式为
+$
+f_\theta(z_t,t,\textembedding) = \Big[z_t - \sqrt{1-\bar{\alpha}_t} \model(z_t,t,\textembedding) \Big] / {\sqrt{\bar{\alpha}_t}}.
+$
+
+LDM 中的注意力机制（Attention Mechanism in LDM）是由扩散模型中的 U-Net 一系列基础模块（basic blocks）构成，每个基础模块通常包含残差块（residual block）~\cite{he2016deep}、自注意力（self-attention）模块以及交叉注意力（cross-attention）~\cite{vaswani2017attention} 模块。注意力机制可形式化为：
+\begin{equation}
+\label{eq:attention}
+\text{Attention}\mathcal(Q_t, K, V)= softmax(\frac{Q_{t}K^T}{\sqrt{d}})V,
+\end{equation}
+其中 $d$ 表示潜变量特征维度；$Q$ 表示由空间特征投影得到的查询（query）特征；$K$ 与 $V$ 分别表示键（key）与值（value）特征，它们在自注意力层中由空间特征投影得到，而在交叉注意力层中则由文本嵌入（text embedding）投影得到。对应的注意力图为
+$
+\mathcal{A}_t=softmax(Q_t \cdot K^T / \sqrt{d}),
+$
+即式~\ref{eq:attention} 中的第一项。
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/framework.pdf}
+  % \vspace{-1mm}
+  \caption{VisCtrl视觉生成与编辑算法框架}
+  % \vspace{-3mm}
+  \label{fig:visctrl_pipeline}
+\end{figure}
+
+
+\subsection{算法架构}
+\label{sec:visctrl}
+如图~\ref{fig:visctrl_pipeline} 所示，该架构包含参考图像分支（上）与目标图像分支（下）。给定一张或多张用于表征新概念的参考图像，我们首先将其通过编码器映射到潜空间，随后添加噪声，两条分支均执行反演（inversion）与去噪（denoising），但两者去噪过程有所不同。具体而言，参考图像分支通过自注意力（self-attention）提供个性化的主体特征。随后，在目标图像分支中，我们通过如下方式组装自注意力的输入：\textbf{(1)} 保持当前的 Query 特征 $Q_t$ 不变；\textbf{(2)} 从参考图像分支的自注意力层中获取 $K_s$ 与 $V_s$ 特征；\textbf{(3)} 持续执行上述去噪过程以获得 $Z_0^t$；\textbf{(4)} 最后，将 $Z_0^t$ 用作 $Z^*$ 的替代值，并在其后进行一次反演过程，然后重复步骤（1）、（2）与（3）共计 $N$ 次迭代，从而将参考图像的特征逐步注入到目标图像中。最后，将 $Z_0^t$ 通过解码器还原到像素空间，从而得到目标图像。我们将 $Z^*$ 初始化为 $\encoder(I_t)$。在迭代过程中，$Z^*$ 按照如下公式更新：
+\begin{equation}
+\label{eq:z_star}
+Z^**{(n+1)} = Z^t*{0(n)}, \quad 1 < n < N
+\end{equation}
+其中，$n$ 表示迭代次数，$N$ 为总迭代次数。值得注意的是，仅在 5 次迭代内即可获得显著提升。每次迭代包含一次反演过程与一次去噪过程，且两者的步数均不超过 5 步。更进一步地，通过为编辑选择合适的去噪起始步 $S$ 与层索引 $L$，我们可以控制参考图像在外观与结构层面向目标图像注入的程度，具体可参见图~\ref{fig:visctrl_diff_step}，图中右上行展示了在不同去噪步数设置下的生成结果；右下行则在 $T=10$ 的条件下，给出了采用不同注入步（insertion step）时的生成结果。VisCtrl算法的伪代码描述为：
+
+\input{table/alg}
+
+其中，算法~\ref{alg:visctrl} 中的 Edit 函数可形式化为：
+
+\begin{equation}
+    \label{eq:visctrl_edit}
+    \text{Edit} := \left \{
+    \begin{aligned}
+        & \{Q_t, K_s, V_s\},\quad \text{if}\quad t > S \quad \text{and} \quad l > L, \\
+        & \{Q_t, K_t, V_t\},\quad \text{otherwise},
+    \end{aligned}
+    \right.
+\end{equation}
+
+其中，$S$ 与 $L$ 分别表示开始的时间步（time step）与层索引（layer index）。
+
+\begin{figure}[!th]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/diff_step.pdf}
+  % \vspace{-1mm}
+  \caption{操控不同去噪步和网络层的编辑结果}
+  % \vspace{-3mm}
+  \label{fig:visctrl_diff_step}
+\end{figure}
+
+
+\section{特征渐进采样策略}
+当将 VisCtrl 方法应用于复杂视觉域、且目标内容分布在多视角中的任务（如视频编辑与三维编辑）时，我们会面临两个关键挑战：\textbf{1）单参考图像的可用性有限：} 在包含多种视角的复杂场景中，仅依赖单张参考图像往往会因不同视角之间存在显著变化而导致结果模糊。这是因为从单张参考图像中检索到的有效信息不足，会使目标图像在迭代过程中逐渐丢失其原始结构。一旦结构被破坏，就很难恢复，因为缺失的结构信息不再存在于目标图像的 Query 中，具体可参见图~\ref{fig:visctrl_gfs_fusion}。\textbf{2）来自多参考图像的一致性注入：} 当引入多张参考图像时，必须确保来自这些参考图像的信息注入保持一致。过于剧烈的差异会导致视频中的抖动以及三维场景中的伪影。
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/gfs_fusion.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{Ablation study.} The top row depicts the insertion of features from a single reference image into the source image, along with the changes in the generated image at each iteration step. The bottom row illustrates the utilization of Feature Gradually Sampling to insert features from multiple reference images into the source image, as well as the changes in the generated image during each iteration. 
+  }
+  % \vspace{-3mm}
+  \label{fig:visctrl_gfs_fusion}
+\end{figure}
+
+因此，我们提出用于多视角编辑的特征渐进采样（FGS）策略。该策略通过对参考图像中的数据进行随机采样，使目标图像能够感知尽可能多的有效信息。此外，为缓解遗忘（forgetting）问题，我们在迭代过程中对 $z$ 采用加权更新。$Z^t_{T(n+1)}$ 的更新公式如下：
+\begin{equation}
+\label{eq:z_t}
+Z^t_{T(n+1)} = \alpha * \mathcal{F}(Z^**{(n)}, \textprompt_t) + (1-\alpha)*Z^t*{T(n+1)}, \quad 1 < n < N
+\end{equation}
+其中，$n$ 表示迭代次数，$\mathcal{F}$ 表示目标分支的 DDIM 反演过程，即在文本条件 $\textprompt_t$ 下，利用 $Z^*_{(n)}$ 获得初始噪声。参数 $\alpha$ 为采样系数，用于控制特征注入的程度；较小的 $\alpha$ 会带来更渐进的特征变化。
+
+\section{实验设计与结果分析}
+\subsection{实验配置}
+我们在多种实验中基于 Stable Diffusion v1.5~\cite{Rombach_2022_CVPR_stablediffusion} 验证了所提出的方法。实验中采用的分割模型为 LangSAM 分割算法，该算法构建于 SAM~\cite{kirillov2023segany} 以及 GroundingDINO~\cite{liu2023grounding} 检测模型之上。所有实验均在单张 NVIDIA V100 GPU 上完成。
+
+\textbf{二维图片生成编辑的配置} AnyDoor~\cite{chen2023anydoor} 与 Paint-by-Example~\cite{yang2022paint} 属于基于模型（model-based）的方法，需要在大规模数据集上进行大量微调。在我们的实验中，我们使用了其各自论文中描述的默认模型与参数。给定一张源图像及其掩码（mask），参考图像会被插入到对应的掩码区域中。Photoswap~\cite{gu2023photoswap} 与 VisCtrl 属于基于注意力（attention-based）的方法，它们通过操控 UNet 中的注意力机制来实现图像编辑。然而，与 Photoswap 不同的是，Photoswap 需要通过 Dreambooth~\cite{ruiz2022dreambooth} 从参考图像中学习新概念，而 VisCtrl 不需要任何额外的训练或学习。由于在我们的实验中 VisCtrl 仅使用一张参考图像，为保证公平性，我们也在 Photoswap 中仅使用单张图像来学习新概念。我们将 Photoswap 中每张图像的 Dreambooth 训练步数设置为 1000，其余参数保持默认设置。对于我们的方法，我们将加噪与去噪步数均设置为 $T=5$，classifier-free guidance 设置为 $\omega=6$，迭代次数设置为 $N=5$。首先，我们使用 DDIM Inversion~\cite{song2021ddim} 将参考图像与目标图像均转换为初始噪声，然后进行去噪并迭代直至收敛。增大步数能够注入并生成更多细节，但不应设置过大，以避免引入来自 DDIM Inversion 的显著偏置。通常而言，在初始迭代中可以设置更高的步数以捕获更多细节，而在后续迭代中去噪步数保持为 5。我们的方法具有很高的效率，一般在三次迭代内即可收敛并获得令人满意的图像结果。需要注意的是，在二维图像实验中，我们仅使用了一张参考图像。
+
+\textbf{视频生成编辑的配置} 在视频编辑任务中，我们将所提出的方法应用于逐帧编辑（frame-by-frame）的设置，即对视频的每一帧分别进行编辑。由于支持参考图像输入的视频编辑方法较少，我们将本方法与其他由文本驱动、无需微调（tuning-free）的视频编辑模型进行比较，例如 Pix2Video，以代表常见的视频编辑方法。对于我们的方法，每一帧都会提供一张参考图像进行编辑，以期实现整体一致的编辑效果。对于 Pix2Video，我们获取参考图像的文本描述，并将其作为文本输入来实现视频的编辑效果。实验中，Pix2Video 的 classifier-free guidance 设置为 $\omega=3.5$，DDIM 步数设置为 $T=50$。由于 Pix2Video 不支持参考图像输入，我们不对编辑结果与参考图像之间的相似性进行过多讨论，而是更关注编辑后视频的时序一致性（temporal consistency）以及背景的保留程度。
+
+\textbf{三维生成编辑的配置}
+在基于文本的三维场景编辑实验中，我们选择 Instruct-NeRF2NeRF 作为基线方法之一~\citep{instructnerf2023}。我们首先使用 NeRFStudio~\citep{tancik2023nerfstudio} 中的 \emph{splatfacto} 方法~\citep{igs2gs} 对 3DGS~\cite{kerbl3Dgaussians} 进行预训练，并在一张 NVIDIA Tesla V100 上以 10 分钟训练 30,000 步。随后，我们以 “give him a pair of sunglasses” 作为 IN2N 的文本条件，对三维场景及其对应数据集进行迭代式编辑。目前个性化三维场景编辑方法较少，因此我们进一步采用二维编辑方法（例如 AnyDoor~\citep{chen2023anydoor}）作为另一类三维场景编辑的基线。具体而言，我们先使用这些二维方法对三维场景数据集中的图像进行编辑，然后再训练模型以获得编辑后的三维场景。在使用 AnyDoor 对每张图像进行编辑时，我们保持模型默认参数不变，并开启 shape control的配置项。
+
+
+\subsection{评估指标与量化结果分析}
+\subsubsection{评估指标}
+在定量评估中，我们从三个维度进行衡量：(1) 从参考图像中注入特征的充分性，(2) 编辑后图像对源图像结构的保留程度，以及 (3) 图像间背景区域的一致性。我们使用 CLIP-I~\cite{ruiz2023dreambooth} 来衡量参考图像与生成图像在主体层面的保真度（fidelity）。该指标通过计算生成图像与真实图像在 CLIP~\cite{radford2021learning} 嵌入空间中的平均两两余弦相似度来获得。除此之外，我们计算背景 LPIPS 误差（BG LPIPS），用于量化编辑后背景区域的保留情况。具体而言，该指标计算源图像与编辑后图像在背景区域上的 LPIPS 距离，其中背景区域通过 SAM 目标检测器~\cite{kirillov2023segany} 进行识别。BG LPIPS 得分越低，表示对原始图像背景的保留效果越好。最后，我们采用结构相似性指标（SSIM）来评估源图像与生成图像之间的相似度，以确保生成结果能够保持源图像的整体结构。在我们的视频编辑与三维场景操控任务中，同样使用 CLIP-I 与 LPIPS 指标进行评估。此外，我们还使用 CLIP Directional Similarity~\cite{gal2021stylegannada}，用于量化文本修改方向与对应图像变化方向之间的一致性程度。
+
+\subsubsection{量化结果分析}
+
+VisCtrl能够便捷地迁移并适配到其他更复杂的视觉个性化编辑任务中是因为：\textbf{(1)} 插拔式（plug-and-play）架构使其可直接集成到任何基于 Stable Diffusion 的方法中；\textbf{(2)} 本方法的核心优势在于 \textbf{Training-Free}，无需微调即可在少量去噪步内完成单图编辑；\textbf{(3)} 面向多视角编辑的 Feature Gradual Sampling（FGS）策略能够在多视角之间实现一致的特征注入，从而支持跨视角一致的编辑效果。我们在一系列复杂视觉场景下开展实验，验证了该方法在更高复杂度任务中的可扩展性与鲁棒性。
+
+\input{table/2d_baselines}
+
+在视频编辑任务中，选用 Pix2Video~\cite{ceylan2023pix2video} 作为基线方法，其采用文本驱动的二维扩散模型实现视频编辑。针对视频编辑任务，我们以单张图像作为参考主体，并将其特征逐帧注入到视频中对应的目标主体区域，从而获得整体一致的个性化编辑结果。表~\ref{tab:3d_video_table} 的定量结果表明：我们的方法能够将视频中被编辑的主体最大程度地编辑为与参考主体相似，同时对编辑区域之外的内容影响较小，具备更好的局部可控性与背景保持能力。我们的方法在 \textbf{CLIP Directional Similarity} 与 \textbf{LPIPS} 两项指标上均取得最优表现。这意味着：（1）从语义对齐角度，模型产生的视觉变化方向与文本编辑意图更一致；（2）从感知相似性角度，编辑后视频在整体结构与外观连续性方面更稳定。
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/3d_editing_baseline.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{Results of different methods on personalized 3D scene editing.} The image on the leftmost is a rendering from the original 3DGS. The image on the rightmost is the reference image used to edit the 3D scene. The images in the middle are rendered from the same viewpoint as the original 3DGS after editing the 3D scene using different methods.
+  }
+  % \vspace{-3mm}
+  \label{fig:visctrl_3d_baseline}
+\end{figure}
+
+三维场景编辑任务中，我们的方法在 AnyDoor~\cite{chen2023anydoor} 的基础上引入 VisCtrl 模块，使得参考图像的特征能够被注入到三维场景中的目标主体上。同时，结合 FGS 策略能够显著提升二维编辑方法在三维场景编辑任务中的跨视角一致性。如图~\ref{fig:visctrl_3d_baseline} 所示，Instruct-NeRF2NeRF（IN2N）生成的墨镜存在结构缺失，并且会对无关背景产生不期望的影响（红色圆圈标注处）。AnyDoor 虽然能够产生“墨镜”这一目标概念，但其生成结果在外观与形状上与参考图像存在明显偏差（蓝色圆圈标注处）。此外，AnyDoor 生成的墨镜区域出现噪声，主要源于不同视角之间编辑结果不一致：这种跨视角不一致会直接破坏多视角数据的几何一致性，从而使 3DGS~\cite{kerbl3Dgaussians} 难以稳定收敛。相比之下，我们的方法通过更一致的特征注入显著缓解了该问题（绿色圆圈标注处），在主体相似度与结构连续性方面表现更优。从定量角度看，表~\ref{tab:3d_video_table} 进一步验证了这一结论：引入VisCtrl模块后，相关指标取得显著提升，说明该模块能够在保证跨视角一致性的同时，更有效地实现参考主体特征的注入，并改善三维生成编辑过程中的稳定性与最终质量。
+
+\input{table/3d_video_table}
+
+\subsection{可视化结果分析}
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/mutil_res.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{不同二维图片编辑方法的效果对比图}
+  }
+  % \vspace{-3mm}
+  \label{fig:visctrl_mutil_res}
+\end{figure}
+
+图~\ref{fig:visctrl_show_res} 展示了 VisCtrl 在图像个性化主体编辑任务中的有效性。我们的方法能够在将参考主体无缝引入源图像的同时，良好地保留原始主体的关键属性，例如空间布局、几何结构以及姿态等。该方法不仅可以实现相似主体之间的个性化注入（例如从鸭子到个性化鸭子、从花瓶到个性化花瓶），还能够支持不同主体之间的编辑（例如将蛋糕的特征注入到三明治中，或将梵高的艺术风格融入人像）。为进一步验证所提出特征注入机制的有效性，我们在不同迭代次数下，分析了在不同提示词条件下生成图像的变化及其对应的交叉注意力（cross-attention）图。
+如图~\ref{fig:visctrl_cross_attention} 所示，仅需 4 次迭代即可获得与 9 次迭代相当的生成质量。随着迭代推进，参考图像中 “joker” 的特征逐步变得更加丰富（例如第二次迭代出现的黑眼圈、第三次迭代出现的额头皱纹等）。我们利用公式~\ref{eq:attention} 计算与 $\textprompt_t$ 相关的交叉注意力图，其中输入为目标分支的潜变量（见图~\ref{fig:visctrl_pipeline} 下半部分）。可以观察到，“joker” 相关特征持续增强，如图中间行所示。类似地，我们计算与 $\textprompt_s$ 相关的交叉注意力图，其中输入为参考分支的潜变量（见图~\ref{fig:visctrl_pipeline} 上半部分），可以看到 “man” 相关特征逐渐减弱，如图底部行所示。在图~\ref{fig:vis_self_attention} 中，我们进一步观察了生成过程中不同迭代阶段自注意力（self-attention）的变化趋势。
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/vis_cross_attention.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{Cross-Attention maps under different iterations.} On the left, using the VisCtrl method, the appearance of a reference image with text condition $\textprompt_s$ is inserted into a target image with text condition $\textprompt_t$. On the right are the changes in the target image during the iterations, as well as the changes in the cross-attention computed between its intermediate latent and $P_s$ and $P_t$ respectively. }
+  % \vspace{-3mm}
+  \label{fig:visctrl_cross_attention}
+\end{figure}
+在图~\ref{fig:visctrl_mutil_res} 中，我们对比分析了所提出的方法与各基线方法的表现。AnyDoor 生成的图像能够较好地呈现参考图像中与主体相关的特征，但会导致源图像结构出现退化。Paint-by-Example 的生成质量较高，但无法有效注入主体相关特征，且对源图像的布局结构保留不足。尽管 Photoswap 在一定程度上同时保留了主体特征与源图像的布局结构，但其生成质量相对较差。相比之下，我们的方法显著优于上述基线：在更好地保留源图像布局结构与背景的一同时，能够从参考图像中注入更多主体特征，实现了两者之间的有效平衡。
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=0.600\textwidth]{./figures/VisCtrl/vis_self_attention.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{Self-Attention maps under different iterations.} This representation reveals that the layout of the edited image is intrinsically embedded in the self-attention map from the initial iteration. At different stages of iteration, the attention map in the self-attention varies.
+  }
+  % \vspace{-3mm}
+  \label{fig:vis_self_attention}
+\end{figure}
+
+
+\subsection{消融实验}
+ 
+{\bf 特征渐进采样的消融实验} 特征渐进采样旨在解决如下问题：在单参考图像设置下，参考图像所包含的主体信息可能不足，从而在迭代注入过程中导致源图像的部分结构细节被逐步削弱甚至丢失。如图~\ref{fig:visctrl_gfs_fusion}（上排）所示，红色圆圈标注的特征会在多层迭代过程中逐渐变弱并最终消失（例如标志“N”的缺失）。一旦这些结构信息在迭代过程中被破坏，后续阶段往往难以将其恢复，因为目标图像分支的表征中已不再包含对应的结构线索。FGS 能够有效缓解这一问题：通过从多张参考图像中进行渐进式特征采样与注入，在引入参考特征的同时，更好地保留源图像的关键结构细节。如图~\ref{fig:visctrl_gfs_fusion}（下排）所示，FGS 在实现多参考特征融合的同时，显著提升了结构保真度与细节稳定性。
+
+{\bf 主体身份可控性的消融实验} 通过设置去噪起始步 \textit{S} 以及 U-Net 的起始层 \textit{L}，来控制从何时、在网络的哪些层开始启用VisCtrl。不同的 \textit{S} 与 \textit{L} 配置会产生不同的编辑效果如见图~\ref{fig:visctrl_shape_ctrl}。当 \textit{S} 与 \textit{L} 取值更小（即更早的去噪步、更浅的网络层开始注入）时， 实际参与的迭代次数将增加，意味着参考图像的特征会在更长的生成过程中持续注入：此时生成结果在外观上会更接近参考图像，同时在结构层面也更趋同。相反，当 \textit{S} 与 \textit{L} 取值更大（更晚/更深层才开始注入）时，参考特征的注入强度减弱，生成结果会更多保留源图像的原有结构与布局，主体身份迁移程度相对降低。
+
+\begin{figure}[!th]
+  \centering
+    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/shape_ctrl.pdf}
+  % \vspace{-1mm}
+  \caption{\textbf{Results at different injecting layers and denoising steps.} The top left corner shows the source image and the corresponding text prompt $\textprompt_t$. The bottom right corner displays the reference image and the corresponding text prompt $\textprompt_s$. The middle section presents the generated results with different combinations of the time step  $S$ and the layer index $L$, with the values gradually decreasing in the direction indicated by the arrows.
+  }
+  % \vspace{-3mm}
+  \label{fig:visctrl_shape_ctrl}
+\end{figure}
+
+\section{本章小结}
+我们提出了视角迭代自注意力控制（View Iterative Self-Attention Control，\textit{VisCtrl}），这是一个简洁但行之有效的个性化视觉编辑框架。\textit{VisCtrl} 无需对模型进行微调，即可利用自注意力机制在图像之间实现特征注入与迁移。此外，我们进一步提出 Feature Gradually Sampling 策略，使 \textit{VisCtrl} 能够适配视频编辑与三维场景编辑等更复杂的视觉应用。我们在示例引导（exemplar-guided）的视觉编辑任务中对该方法进行了验证，覆盖二维图像、视频以及真实三维场景，并在定量与定性评估中均优于以往方法。

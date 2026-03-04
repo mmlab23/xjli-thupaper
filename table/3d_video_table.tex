@@ -1,0 +1,22 @@
+% 需要在导言区：\usepackage{booktabs}
+\begin{table}[t]
+\centering
+\caption{Quantitative Results on other-domain editing. \textit{Vistrl} improves AnyDoor and Pix2video across both 3D and video editing tasks, with notable gains highlighted in red.}
+\label{tab:3d_video_table}
+\setlength{\tabcolsep}{6pt}    % 列间距
+\renewcommand{\arraystretch}{1.1} % 行距
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+Method & CLIP-DS($\uparrow$) & CLIP-I($\uparrow$) & LPIPS($\downarrow$) \\
+\midrule
+IN2N~\cite{brooks2022instructpix2pix} & \textbf{0.210} & 79.0\% & \textbf{0.401}\\
+AnyDoor~\cite{chen2023anydoor} & 0.180 & 76.3\% & 0.529\\
+AnyDoor+\textbf{\textit{VisCtrl}} & 0.189({\scriptsize\color{red}+5\%}) & \textbf{79.9\%}({\scriptsize\color{red}+4.7\%}) & 0.452({\scriptsize\color{red}+14.5\%})\\
+\midrule
+Pix2video~\cite{ceylan2023pix2video} & 0.114 & 77.3\% & 0.398\\
+Pix2video+\textbf{\textit{VisCtrl}} & \textbf{0.138}({\scriptsize\color{red}+21.1\%})  & \textbf{81.4\%}({\scriptsize\color{red}+5.3\%}) & 0.247({\scriptsize\color{red}+39.4\%}) \\
+\bottomrule
+\end{tabular}
+\vspace{-2mm}
+\end{table}

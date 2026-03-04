@@ -1,0 +1,59 @@
+\begin{table*}[ht]\footnotesize
+    % \setlength\tabcolsep{3pt}
+    \centering
+    \caption{三维数字人舞蹈动作数据集对比}
+    \resizebox{\textwidth}{!}{
+        \begin{tabular}{lccccccccccc}
+            \toprule [1pt] \noalign{\smallskip}
+            数据集 &  Pos/Rot & 关节点数 & 手 & 脸 & 题材 & 动捕& 单人舞   & 多人舞 & SMPL & \makecell[c]{总计小时} & \makecell[c]{平均时长（秒）}\\
+            \hline\noalign{\smallskip}\noalign{\smallskip}
+            PMSD~\cite{valle2021transflower} & \Checkmark/\XSolidBrush & 52 & \XSolidBrush & \XSolidBrush &14 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush  & 3.84 & -\\
+            Dance w/Melody~\cite{tang2018dance} & \Checkmark/\XSolidBrush & 21 & \XSolidBrush & \XSolidBrush & 4 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush & 1.6 & 92.5\\
+            Music2Dance~\cite{zhuang2022music2dance} & \Checkmark/\XSolidBrush & 55 & \Checkmark & \XSolidBrush & 2 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush & 0.96 & -\\
+            AIOZ-GDANCE~\cite{le2023music}& \Checkmark/\Checkmark & 24 & \XSolidBrush & \XSolidBrush & 7 & \XSolidBrush & \XSolidBrush & \Checkmark & \Checkmark & \textbf{16.7} & 73.8\\
+            PhantomDance~\cite{li2022danceformer} & \Checkmark/\XSolidBrush & 24 & \XSolidBrush & \XSolidBrush & 13 & \XSolidBrush & \Checkmark & \XSolidBrush & \XSolidBrush &  9.6 & 133.3\\
+            AIST++~\cite{li2021ai} & \Checkmark/\Checkmark & 24 & \XSolidBrush & \XSolidBrush & 10 & \XSolidBrush & \Checkmark & \XSolidBrush & \Checkmark & 5.2 & 13.3\\
+            MMD~\cite{chen2021choreomaster} & \Checkmark/\Checkmark & 52 & \Checkmark & \XSolidBrush & 4  & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush &  9.9 & -\\
+            FineDance~\cite{li2023finedance}  &  \Checkmark/\Checkmark & 52 & \Checkmark & \XSolidBrush & \textbf{22} & \Checkmark & \Checkmark & \XSolidBrush & \Checkmark & 14.6 & 152.3\\
+    
+            \midrule [0.5pt]
+            \textbf{SoulDance (Ours)} &  \Checkmark/\Checkmark & \textbf{55+\underline{\textit{52}}} & \Checkmark & \Checkmark & 15  & \Checkmark & \Checkmark & \Checkmark & \Checkmark & 12.5 & \textbf{158.5}\\
+            % \noalign{\smallskip}
+            \bottomrule [1pt] 
+        \end{tabular}
+    }
+    % \vspace{0.1mm}
+    \label{tab:data_compare}   
+    % \vspace{-1em}
+\end{table*}
+
+
+
+% \begin{table*}[ht]
+%     \setlength\tabcolsep{3pt}
+%     \centering
+%     \resizebox{\textwidth}{!}{
+%         \begin{tabular}{lccccccccccc}
+%             \toprule [1pt] \noalign{\smallskip}
+%             Dataset &  Pos/Rot &  \makecell[c]{Joints\\num} & Hand & Face & Genres & Mocap& \makecell[c]{Single\\Dance}   & \makecell[c]{Group\\Dance} & SMPL & \makecell[c]{Total\\hours} & \makecell[c]{avg Sec\\per Seq}\\
+%             \hline\noalign{\smallskip}\noalign{\smallskip}
+%             PMSD~\cite{valle2021transflower} & \Checkmark/\XSolidBrush & 52 & \XSolidBrush & \XSolidBrush &14 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush  & 3.84 & -\\
+%             Dance w/Melody~\cite{tang2018dance} & \Checkmark/\XSolidBrush & 21 & \XSolidBrush & \XSolidBrush & 4 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush & 1.6 & 92.5\\
+%             Music2Dance~\cite{zhuang2022music2dance} & \Checkmark/\XSolidBrush & 55 & \Checkmark & \XSolidBrush & 2 & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush & 0.96 & -\\
+%             AIOZ-GDANCE~\cite{le2023music}& \Checkmark/\Checkmark & 24 & \XSolidBrush & \XSolidBrush & 7 & \XSolidBrush & \XSolidBrush & \Checkmark & \Checkmark & \textbf{16.7} & 73.8\\
+%             PhantomDance~\cite{li2022danceformer} & \Checkmark/\XSolidBrush & 24 & \XSolidBrush & \XSolidBrush & 13 & \XSolidBrush & \Checkmark & \XSolidBrush & \XSolidBrush &  9.6 & 133.3\\
+%             AIST++~\cite{li2021ai} & \Checkmark/\Checkmark & 24 & \XSolidBrush & \XSolidBrush & 10 & \XSolidBrush & \Checkmark & \XSolidBrush & \Checkmark & 5.2 & 13.3\\
+%             MMD~\cite{chen2021choreomaster} & \Checkmark/\Checkmark & 52 & \Checkmark & \XSolidBrush & 4  & \Checkmark & \Checkmark & \XSolidBrush & \XSolidBrush &  9.9 & -\\
+%             FineDance~\cite{li2023finedance}  &  \Checkmark/\Checkmark & 52 & \Checkmark & \XSolidBrush & \textbf{22} & \Checkmark & \Checkmark & \XSolidBrush & \Checkmark & 14.6 & 152.3\\
+    
+%             \midrule [0.5pt]
+%             \textbf{SoulDance (Ours)} &  \Checkmark/\Checkmark & \textbf{55+\underline{\textit{52}}} & \Checkmark & \Checkmark & 15  & \Checkmark & \Checkmark & \Checkmark & \Checkmark & 12.5 & \textbf{158.5}\\
+%             % \noalign{\smallskip}
+%             \bottomrule [1pt] 
+%         \end{tabular}
+%     }
+%     \vspace{0.1mm}
+%     \caption{\textbf{Comparisons of 3D Dance Datasets}. ``Po" and ``Rot" represent 3D position and rotation information, respectively. ``\underline{\textit{52}}" refers to the parameters associated with ARKit blendshapes. ``avg Sec per Seq" indicates the average duration in seconds for each sequence.}
+%     \label{tab:data_compare}   
+%     \vspace{-1em}
+% \end{table*}

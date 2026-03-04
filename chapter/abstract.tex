@@ -1,0 +1,31 @@
+% !TeX root = ../thuthesis-example.tex
+
+% 中英文摘要和关键字
+
+\begin{abstract}
+
+三维数字人的舞蹈内容生成技术对于游戏开发、虚拟现实、影视制作等众多领域具有广发的应用场景和重要的研究意义。在舞蹈表演中，角色的动作表现与服装道具等外观要素共同决定舞蹈整体表现以及观感叙事。因此，三维数字人舞蹈内容可归纳为两类核心要素：动态的全身舞蹈动作资产与静态的角色外观资产。现有的角色外观生成方法多依赖模型微调范式，通常需要多张参考图并伴随较高训练开销，难以高效部署与规模化应用；而三维数字人舞蹈生成又受制于高质量全身数据稀缺、动作协同建模不足以及音乐—动作对齐不稳定等因素，导致生成结果在细粒度表现力与整体感染力上受限。
+% 高表现力三维数字人舞蹈内容生成不仅要求在音乐条件下生成节奏与情绪对齐的全身舞蹈动作，还需支持面向娱乐创作的外观个性化定制，以支撑角色形象的快速塑造与创意表达。然而，
+
+针对上述问题，本文提出一套面向高表现力三维数字人舞蹈内容生成的框架，从外观快速定制和协调舞蹈动作生成层面系统提升生成质量与实用性。在外观定制方面，本文提出一种无需训练的注意力控制方法：首先利用 DDIM 反演获得角色参考图与目标图的噪声轨迹，再在去噪过程中通过自注意力特征注入，将参考主体的关键外观特征迁移至目标图像。为提升自然度与稳定性，本文采用小步数反演—去噪的迭代策略，实现渐进式特征融合，从而降低结构突变与纹理漂移。该方法仅需单张参考图即可完成快速个性化角色定制，具备即插即用与模块化组合优势，并可扩展到视频及三维场景等复杂生成域。在舞蹈动作生成方面，本文构建覆盖身体动作、手部姿势与面部表情的三维数字人舞蹈数据集，并提供与音乐节拍严格同步的对齐标注。在此基础上，本文提出全身统一动作表示与分层生成建模架构，通过跨部位交互显式建模手—身—脸的耦合关系，以提升动作的连贯性与表现力。进一步地，本文设计音乐条件注入与对齐约束策略，将音乐节奏结构与情绪线索融入动作生成过程，使生成舞蹈在节拍结构与情绪张力上与音乐保持一致。
+
+本文框架在显著降低角色外观定制成本的同时，能够生成更自然协调、细节更丰富且与音乐节奏与情绪更匹配的全身舞蹈序列。本文工作为虚拟偶像表演与数字内容生产提供了一条兼顾三维数字人外观定制与动作生成的技术路径。
+
+  % 关键词用“英文逗号”分隔，输出时会自动处理为正确的分隔符
+  \thusetup{
+    keywords = {三维数字人, 外观个性化编辑, 全身舞蹈动作生成, 音乐条件对齐, 注意力控制},
+  }
+\end{abstract}
+
+% \begin{abstract*}
+%   High-expressiveness 3D digital human dance generation requires not only producing full-body dance motions that are aligned with music in both rhythm and emotion, but also supporting appearance personalization for entertainment-oriented creation, enabling rapid character customization and creative expression. Existing appearance customization methods often rely on model fine-tuning, typically requiring multiple reference images and incurring considerable training cost, which limits efficiency and scalability. Meanwhile, digital human dance generation is commonly constrained by the scarcity of high-quality full-body datasets, insufficient modeling of motion coordination, and unstable cross-modal alignment, leading to limited fine-grained expressiveness and overall appeal in the generated results.
+
+% To address these issues, this thesis proposes a unified production framework for high-expressiveness 3D digital human dance content from three aspects: fast appearance customization, coordinated full-body motion generation, and music-alignment constraints. For appearance editing, we introduce a training-free attention control mechanism. We first obtain the initial noise trajectories of the reference and target images via DDIM inversion, and then inject key appearance features of the reference subject into the target image through self-attention feature injection during denoising. To improve naturalness and stability, we adopt an iterative strategy with small-step inversion and denoising to achieve progressive feature fusion, thereby reducing the risk of abrupt structural changes and texture drifting. This method enables fast personalized editing with only a single reference image, is plug-and-play and modularly composable, and naturally extends to complex domains such as images, videos, and 3D scenes, providing effective support for efficient customization and diverse visual expression of entertainment-oriented digital humans. For motion generation, we construct a dance dataset that includes body motions, hand poses, and facial expressions, and provide alignment annotations strictly synchronized with musical beats. Building on this dataset, we propose a unified full-body motion representation and a hierarchical modeling architecture. By explicitly modeling cross-part interactions, the framework captures the coupling among hands, body, and face, improving motion coherence and expressiveness. Furthermore, we design a music-conditioned alignment strategy that incorporates musical rhythmic structures and affective cues into the generation process, together with alignment constraints, so that the generated motions are consistent with the music in beat structure and emotional intensity.
+
+% Experimental results demonstrate that, while significantly reducing the cost of appearance customization, the proposed framework generates full-body dance sequences that are more natural and coordinated, richer in details, and better aligned with the rhythm and emotion of the input music. Ablation studies verify that the training-free appearance feature injection plays a key role in editing stability and feature preservation; the unified full-body representation improves hand--body--face coordination and motion continuity; and the music-alignment constraints markedly enhance consistency between dance and music in rhythmic structure and affective expression. Overall, this work provides an integrated technical pathway that unifies appearance creation and motion generation for virtual idol performances and digital content production.
+
+%   % Use comma as separator when inputting
+%   \thusetup{
+%     keywords* = {3D digital humans, appearance personalization, full-body dance motion generation, music-conditioned alignment, attention control},
+%   }
+% \end{abstract*}

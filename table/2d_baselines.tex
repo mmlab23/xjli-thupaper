@@ -1,0 +1,20 @@
+
+\begin{table}[t]
+\centering
+\caption{Comparison to prior exemplar-guided image editing methods. In the CLIP-I column, the left value denotes the score between the reference image and the generated image, while the right represents the score between the source image and the generated image.
+}\label{tab:2d_baselines}
+\setlength{\tabcolsep}{6pt}    % 列间距
+\renewcommand{\arraystretch}{1.1} % 行距
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+Method & CLIP-I($\uparrow$) & BG LPIPS($\downarrow$) & SSIM($\uparrow$) \\
+\midrule
+Paint-by-Example \cite{yang2022paint} & 72.2\%/63.9\% & 0.338 & 0.599 \\
+Photoswap \cite{gu2023photoswap}      & 60.0\%/70.1\% & 0.227 & 0.681 \\
+AnyDoor \cite{chen2023anydoor}        & 69.9\%/68.1\% & 0.379 & 0.472 \\
+\textbf{\textit{VisCtrl} (ours)}              & \textbf{73.9\%}/\textbf{75.6\%} & \textbf{0.208} & \textbf{0.802} \\
+\bottomrule
+\end{tabular}
+\vspace{-2mm}
+\end{table}

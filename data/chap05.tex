@@ -1,0 +1,161 @@
+% !TeX root = ../thuthesis-example.tex
+
+\chapter{现有工作基础}
+
+\section{动机实验}\label{motivation experiments}
+在这一节中，我们旨在给出一些动机实验来证明：1）在通信受限的环境中，为不同尺寸的节点设置不同压缩率的压缩策略比统一压缩收敛更快。2）为大节点设置较高压缩率的策略往往比给那些小节点更高压缩率的策略收敛得更快，最多可节省33.75\%的迭代轮数。为此，我们提出了两种非统一的压缩策略。1）非均匀压缩策略I。给大节点设置更高压缩率，给小节点设置更低压缩率。2）非均匀压缩策略II。给大节点设置更低压缩率，给小节点设置更高压缩率。
+
+实验上，我们同时进行了图像分类（用Logsitic模型跑Fashion-MNIST数据集，简称为Logsitic@FMNIST）和语音识别任务（用LSTM模型跑SpeechCommands数据集，简称为LSTM@SCs），以确保实验结果的普遍性。为了能更明显的看到实验结果，我们将节点分为两类，大节点和小节点。我们设置了11个节点，包括1个大节点，其局部数据集占全局数据集的$50\%$，以及10个小节点，每个小节点的数据集占$5\%$。这些实验中的通信都是受限制的（平均压缩率指的是之前工作 \cite{hardthreshold}在附录中的实验指导参数$k_{min}=0.1\%$），总通信量固定（即固定$\sum_{i=1}^n \delta_i$）。
+
+
+
+
+\begin{figure}
+  \centering
+  \subcaptionbox{Logsitic@FMNIST\label{fig:2:a}}
+    {\includegraphics[width=0.35\linewidth]{figures/Fig2/Logistic@FMNIST.pdf}}
+  \subcaptionbox{LSTM@SCs\label{fig:2:b}}
+    {\includegraphics[width=0.35\linewidth]{figures/Fig2/LSTM@SCs.pdf}}
+  \caption{在Logistic@FMNIST（a）和LSTM@SCs（b）的训练中使用不同的压缩策略时的收敛率。非均匀压缩策略I（以及方案II）给大节点提供了更高（更低）的压缩率，而均匀压缩策略给每个节点提供了相同的压缩率。非均匀压缩策略I在三种策略中表现最好。}
+  \label{fig:subfig}
+\end{figure}
+
+\noindent\textbf{Logistic跑FMNIST:}。图\ref{fig:2:a}显示，非均匀压缩策略I（$\delta_1=1\%,\delta_i=0.01\%$, $i\in [2,n]$）在早期迭代中比其他两种策略收敛得更快。为了收敛到相同的精度（$80\%$），非均匀压缩I与均匀压缩（$\delta_i=0.1\%$，$i\in [1,n]$）相比可以减少多达$33.75\%$的迭代次数（从$1600$降到$1060$迭代）。由于FMNIST更容易收敛，$0.1\%$的压缩率对应保守压缩，在这种情况下，非均匀压缩策略I表现最佳，非均匀压缩策略II（$\delta_1=0.01\%,\delta_i=0.11\%$，$i\in [2,n]$）表现最差。
+
+\noindent \textbf{LSTM跑SCs:} 图 \ref{fig:2:b}显示，在通信量固定的条件下，模型使用非均匀压缩策略I会收敛得最快。为了收敛到相同的精度（如$32\%$），与均匀压缩策略和非均匀压缩策略II相比，非均匀压缩策略I可以分别减少达$17.59\%$（从$43200$次到$35600$次）和$11.44\%$（从$40200$次到$35600$次）的训练时间。与FMNIST和CIAFR-10相比，SCs数据集的收敛更具挑战性，$0.1\%$的压缩率对SCs来说是非常激进的。我们可以看到，在$50000$ 次迭代之后，训练还没有完全收敛。在这样的条件下，非均匀压缩策略I和II都比均匀压缩表现好。详细的压缩率与FMNIST上的Logistic相同。
+
+
+综上所述，上面的实验结果证实了这样一个事实：即在面对节点大小存在差异时，均匀压缩策略并不是最佳策略。相反，我们所提出的为大节点分配较高压缩率的策略是提高训练速度的有效方法。
+
+\section{DAGC实验结果}
+
+这部分的评估回答了以下问题:
+
+$\bullet$ 在总压缩率是有限的和固定的条件下，DAGC在现实世界的数据集中的表现是否优于均匀压缩策略？
+
+$\bullet$  当大小分布变得更加不平衡，压缩变得更加激进时，DAGC的表现会更好吗？
+
+我们证明了DAGC在真实世界的Non-IID数据集和人工划分的Non-IID数据集中都有较快的收敛速度，尤其是面对高度不平衡的数据分布和受限通信的条件下。
+
+\subsection{实验设置}
+%\input{data/Table Expriment}
+
+\noindent \textbf{实验环境:}
+我们的实验是在一台运行于Ubuntu 16.04系统的服务器上实现的，这台服务器配备了Inter Xeon CPU E$5-2650$ v$4$  $@2.20$GHz 和带有4张NVIDIA GeForce GTX $1080$ Ti，内存为$12$GB。Python的版本是$3.8.13$，其他使用的库都是基于Python版本。我们使用PyTorch 版本为$1.11.0$，CUDA版本为 $10.2$。该章节和 \ref{motivation experiments} 动机实验用的都是这个实验环境。
+
+\noindent \textbf{Non-IID 类型：} 我们在两种Non-IID类型中运行实验。
+
+\noindent$\bullet$ \textit{人为Non-IID 数据划分:} 
+
+为了模拟Non-IID中的不平衡分布，我们将每个标签中服从Dirichlet分布的样本按比例分配给每个工作者，并将Dirichlet的参数设置为$0.5$。这种产生Non-IID的分区策略被广泛使用 \cite{li2020practical,niidbench,wang2020federated} 。
+
+\noindent$\bullet$  \textit{真实世界数据集：}我们使用Flickr \cite{niid2020icml}作为真实世界的数据集。我们从\texttt{https://doi.org/10.5281/zenodo.3676081}下载数据集，并根据图片所属的次大陆来划分。排除损坏的图像和妨碍下载图像的网络限制，我们总共得到了$15$个节点，数据分布如图
+% Fig. \ref{fig:3:a} .
+
+\noindent \textbf{实验任务:} 本工作共使用了四种类型的实验设置（包括\ref{motivation experiments}动机实验），其任务包括图像分类（Logistic@FMNIST，CNN@CIFAR-10,VGG11s@Flickr）和语音识别（LSTM@SCs）。这里使用的CNN是一个有四层的卷积神经网络，参考自工作 \cite{fed_learning}。VGG-11s是VGG-11  \cite{vgg}的简化版，参考自工作 \cite{sbc} 。LSTM有$2$个隐藏层，隐藏层规模为$128$。所有这些模型都去掉了批量归一化层，以减轻Non-IID造成的精度损失 \cite{niid2020icml}。语音识别的数据集是Speech Commands \cite{warden2018speech}（简写为SCs）。我们选择了SCs中样本数量最多的十个类别，从每个类别中抽取$4000$ 个样本，其中$3000$个样本作为训练集，其余$1000$个样本作为测试集。
+
+
+\noindent \textbf{相对压缩器:} 我们尝试使用Top-$\delta$\footnote{这种算法在其他文献 \cite{aji2017sparse,alistarh2018convergence}中被写成 "Top-k"，但为了与压缩比$\delta$保持一致，我们将其写成Top-$\delta$。 }，代表传输$\delta$最大的梯度值（绝对值），这是一种在（自适应）梯度压缩领域广泛研究的相对梯度压缩器 \cite{hardthreshold,accordion,stich2019error}。接下来如果 Top-$\delta$作为一种比较算法出现，该算法默认使用均匀压缩策略。
+
+\noindent \textbf{节点数量与节点尺寸：}   这个设置只适用于人工Non-IID数据划分。我们设定工人的数量为$10$。节点尺寸并不和 \ref{motivation experiments}动机实验中一样采用二分法（动机实验中采用二分法的原因是为了简化实验）。为了合理刻画一个数据集中节点尺寸的差异，我们类比工作\cite{longtail}中描述数据分布差异的不平衡度概念 \footnote{不平衡度等于数据分布中数据量最大的类的数据量除以类中数据最少的数据量，不平衡度越大说明数据分布越不平衡}，提出了倾斜率来衡量节点数据量分布的差异，倾斜率等于尺寸最大节点的权重除以尺寸最小节点，该值越大，说明节点数据分布越不平衡。我们设计$p_i$是一个等比序列 \footnote{因为$p_1/p_n$为指定倾斜率且$\sum_{i=1}^n p_i=1$，我们可以推导出$p_i$，$\forall i \in [1,n]$。} 为了增加序列的随机性，并与现实世界的数据集密切相关，我们在$p_i$, $i \in [2,n-1]$中加入了一个Dirichlet分布（分布的集中参数为$0.5$），使其成为一个近似的等比数列，仍按降序排列。这参考自在联邦学习中生成具有不同节点尺寸的人为Non-IID数据集 \cite{niidbench,wang2020tackling}。
+
+
+\subsection{真实世界Non-IID场景}
+
+
+\begin{figure}
+  \centering
+  \subcaptionbox{Flickr的数据分布\label{fig:3:a}}
+    {\includegraphics[width=0.35\linewidth]{figures/heatmap_Flickr.pdf}}
+  \subcaptionbox{$\Bar{\delta}=10\%$\label{fig:3:b}}
+    {\includegraphics[width=0.35\linewidth]{figures/Fig3/VGG11s@Flickr_1249_0.1.pdf}}
+  \vfill
+  \subcaptionbox{$\Bar{\delta}=1\%$\label{fig:3:c}}
+    {\includegraphics[width=0.35\linewidth]{figures/Fig3/VGG11s@Flickr_4997_0.01.pdf}}
+  \subcaptionbox{$\Bar{\delta}=0.1\%$\label{fig:3:d}}
+    {\includegraphics[width=0.35\linewidth]{figures/Fig3/VGG11s@Flickr_4997_0.001.pdf}}  
+  \caption{Flickr的数据分布（a）和在Flickr上训练VGG11s时使用不同压缩算法的收敛率，平均压缩率$\Bar{\delta}$ $=10\%$（b）， $1\%$（c），$0.1\%$（d）。Top-$\delta$使用的是均匀压缩策略。在固定且受限的通讯条件下，DAGC的性能优于Top-$\delta$的固定和有限通信。}
+  \label{fig:3}
+\end{figure}
+
+我们的实验结果表明，在有固定通信量的真实世界场景中，DAGC的训练结果优于均匀压缩的Top-$\delta$。
+
+
+图 \ref{fig:3:a}显示了Flickr的数据分布（按次大陆划分）。Flickr的倾斜率为$4997$（$=\left[ \frac{79958}{16} \right]$）。我们取出$10$类图片数量最多的类别。然后，我们从这$15$中抽取这10种图像作为训练数据集。
+
+ 每个节点依次拥有79958, 57326, 23677, 21513, 19298, 13257, 10298, 8508, 7758, 5787, 4394, 1398, 559, 64, 16个训练样本。
+图 \ref{fig:3:b}显示，DAGC实现了比$Top-\delta$更快的收敛速度，平均压缩率$\Bar{\delta}=10\%$。为了收敛到相同的精度（$64\%$），DAGC与均匀压缩相比可以减少$23.24\%$ 的迭代次数（从$41480$ 迭代到$31840$迭代）。
+
+图 \ref{fig:3:c}显示当$\Bar{\delta}=1\%$时，$Top-\delta$在早期迭代中收敛较快，在后期迭代中被DAGC超越。早期阶段的滞后可能是由于损失的波动和初始位置难以收敛。在后期阶段，DAGC与均匀压缩相比显示出优越的性能，从而实现了反转。与均匀压缩相比，DAGC在后期阶段可以节省$26.19\%$ 的训练时间（从$37880$的迭代到$27960$ 的迭代），同时具有相同的精度（$43\%$）。
+
+
+图 \ref{fig:3:d}的曲线由于过于激进的压缩减缓了模型的收敛速度而出现了较大的波动。即便如此，DAGC在大多数迭代次数中仍然优于均匀压缩。
+
+当平均压缩率低于$0.1\%$时，用VGG11s模型跑Flickr并不会收敛，所以我们没有显示更小压缩率的准确性曲线。总的来说，在固定通信量的正常压缩区间内，DAGC的性能优于均匀压缩，无论是在激进的还是保守的压缩区间。
+
+\subsection{人为划分的Non-IID场景}
+%\input{sections/Table Evaluation.tex}
+
+\begin{table}[!t]
+  \centering
+  \caption{不同梯度压缩算法在不同倾斜率和$\Bar{\delta}$下的准确精度。倾斜率衡量大小分布的不平衡性，倾斜率越大尺寸分布越不平衡，而平均压缩率$\Bar{\delta}$则衡量通讯受限的程度，压缩率越小说明通讯受限越严重。结果表明，DAGC在图像分类和语音识别任务中都优于Top-$\delta$，特别是当节点数据分布高度不平衡不平衡且通信高度受限时。}
+  \begin{tabular}{c|c|ccc}
+  \hline
+   \makecell[c]{模型\\@数据集}& 倾斜度 &
+   $\Bar{\delta}$ & \textbf{DAGC} & Top-$\delta$\\
+   \hline
+   \hline
+    \multirow{9}*{\makecell[c]{CNN\\@CIFAR-$10$}} & \multirow{3}*{$10$} & $10\%$ & $\mathbf{73.3}\% \pm \mathbf{0.3}\%$ & $73.2\% \pm 0.2\%$\\
+    
+    & & $1\% $& $\mathbf{72.3}\% \pm \mathbf{0.5}\% $ & $72.2\% \pm 0.3\%$ \\
+
+    & & $0.1\% $ & $\mathbf{67.5}\% \pm \mathbf{0.2}\%$ & $66.5\% \pm 0.2\%$ \\
+ 
+    & \multirow{3}*{$100$} & $10\% $& $ \mathbf{72.7}\% \pm \mathbf{0.2}\% $ & $72.6\% \pm 0.7\% $ \\
+%\cline{3-5}
+    & & $1\%$ & $ \mathbf{72.0}\% \pm \mathbf{0.2}\% $ & $71.7\% \pm 0.3\% $\\
+%\cline{3-5}
+    & & $0.1\%$ & $ \mathbf{68.0}\% \pm \mathbf{0.1}\% $ & $65.9\% \pm 0.2\%$\\
+%\cline{2-5}
+    &\multirow{3}*{$1000$} & $10\% $& $72.6\% \pm 0.4\%$ & $ \mathbf{73.3}\% \pm \mathbf{0.1} $ \% \\
+%\cline{3-5}
+    & & $1\%$ & $ \mathbf{71.7}\% \pm \mathbf{0.3}\% $ & $71.7\% \pm 0.4\%$ \\
+%\cline{3-5}
+    & & $0.1\%$ & $ \mathbf{67.2}\% \pm \mathbf{0.1}\% $ & $65.9\% \pm 0.3\%$ \\
+    \hline
+    \multirow{9}*{\makecell[c]{LSTM\\@SCs}} & \multirow{3}*{$10$} & $10\%$ & $ \mathbf{77.5}\% \pm \mathbf{0.4}\% $ & $76.8\% \pm 0.4\%$\\
+%\cline{3-5}
+& & $1\% $& $62.6\% \pm 1.0\% $& $ \mathbf{64.4} \% \pm \mathbf{0.6}\% $ \\
+%\cline{3-5}
+& & $0.1\%$ & $27.5$\% $\pm$ $0.3$\% & $ \mathbf{30.4}\% \pm \mathbf{0.3}\% $ \\
+%\cline{2-5}
+& \multirow{3}*{$100$} & $10\% $& $ \mathbf{79.0}\% \pm \mathbf{0.6}\% $ & $77.4\% \pm 0.4\%$ \\
+%\cline{3-5}
+& & $1\%$ & $ \mathbf{67.7}\% \pm \mathbf{1}\% $ & $64.3\% \pm 1.0\% $\\
+%\cline{3-5}
+& & $0.1\%$ & $35.7\% \pm 0.5\% $& $ \mathbf{36.1}\% \pm \mathbf{0.4}\% $\\
+%\cline{2-5}
+&\multirow{3}*{$1000$} & $10\%$ & $ \mathbf{78.1}\% \pm \mathbf{0.8}\% $  & $77.5\% \pm 0.3\%$ \\
+%\cline{3-5}
+& & $1\%$ & $ \mathbf{66.4}\% \pm \mathbf{0.7}\% $ & $65.0\% \pm 0.2\% $\\
+%\cline{3-5}
+& & $0.1\%$ & $ \mathbf{39.4}\% \pm \mathbf{0.3}\% $ & $24.8\% \pm  0.3\% $\\
+    \bottomrule
+    
+  \end{tabular}
+  \label{table：2}
+\end{table}
+
+我们的实验结果表明，在高度不平衡的数据量分布情况下，DAGC实现了比均匀压缩更好的性能。在不同的倾斜率和$\Bar{\delta}$ 下，采用不同压缩算法的图像分类（CNN on CIFAR-$10$）和语音识别（LSTM on SCs）任务的准确性如表\ref{table：2}所示。接下来，我们从不同的角度来分析数据。
+
+\noindent\textbf{不同倾斜率之间的比较：}。随着倾斜率的增加，DAGC在图像分类和语音识别任务中的优势变得更加明显。当倾斜率为$10$时，DAGC在 CNN@CIFAR-$10$中的表现与Top-$\delta$没有区别，在LSTM@SCs中甚至更弱（$\Bar{\delta}=10\%$ 和 $\Bar{\delta}=1\%$）。但当倾斜率达到100甚至更高时，在相同的迭代次数后，DAGC实现了比统一压缩更高的精度（CNN@CIFAR-$10$的迭代次数为$20000$，LSTM@SCs的迭代次数为$50000$）。
+
+当倾斜度很高时，DAGC的表现更好，因为此时主导项$\Phi(\delta_1,\ldots,\delta_n)$的改变会更明显。当偏斜率较小时（等于或小于$10$），DAGC和Top-$\delta$在压缩率设置和$\Phi(\delta_1,\ldots,\delta_n)$的值上的差异极小，所以DAGC和Top-$\delta$在精度上几乎没有差别。但当偏斜率较大时，DAGC的压缩设置与Top-$\delta$差别很大，主导项的减少有效地反映在模型收敛率上。这也解释了DAGC在Flickr上的VGG11s上的优越性，因为其倾斜率接近5000美元。
+
+\noindent\textbf{不同$\Bar{\delta}$之间的比较：}。
+DAGC在较低的压缩比下收敛得更快。在CNN@CIAFR-$10$中，如果倾斜率固定，随着$\Bar{\delta}$的减少，DAGC提升的准确性越高，与均匀压缩的Top-$\delta$相比。在LSTM@SCs中，当偏斜率为$1000$时，也出现了同样的趋势。这些结果表明，DAGC适用于高度受限的通信状况。
+
+实验结果与理论分析是一致的。当$\Bar{\delta}$变小时，主导项$\Phi(\delta_1,\ldots,\delta_n)$对收敛率的影响就越大，这与假设 \ref{assumption:*}吻合。所以DAGC在通讯总量一定但受限的环境中表现良好。
+
+
+综上所述，当数据集高度不平衡且通讯受限的环境中，DAGC表现得更好，无论是在现实世界的Non-IID数据集还是人为划分的Non-IID数据集上。这与我们的理论分析是一致的。

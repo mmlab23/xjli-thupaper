@@ -1,0 +1,139 @@
+% !TeX root = ../thuthesis-example.tex
+
+\chapter{研究目标和拟解决的关键问题}
+
+\section{研究目标}
+
+\subsection{实现对Non-IID更鲁棒的基于节点数据量的自适应梯度压缩算法}
+
+传统梯度压缩算法在Non-IID场景中会造成更严重的精度损失，这是因为他们对每个节点都使用了同样激进的梯度压缩策略。但是根据我们的测量实验，我们发现，对每个节点都采用相同激进的压缩策略并不是通信受限且总量固定条件下的最优策略。给大节点更保守的压缩率能有效帮助模型收敛。我们希望能提出一个数据感知的梯度压缩算法，从理论上实现比均匀压缩更快的收敛速度，低成本的提升算法对Non-IID的鲁棒性。
+
+\subsection{实现基于节点数据分布的自适应梯度压缩策略}
+
+由于Non-IID问题导致局部模型与全局模型出现偏移，传统的梯度算法在应用到Non-IID场景中会出现更严重的精度下降，甚至不收敛。我们希望可以通过添加一个低成本的预处理节点，判断局部数据集与全局数据集之间的差距。训练过程中，中心服务器会根据这个指标来判断节点质量的高低，自适应的调节各节点压缩率，提升梯度压缩算法对极端Non-IID分布（如每个节点只有一类图片）的鲁棒性。
+
+\section{拟解决的关键问题}
+
+\subsection{给定通信总量条件下如何确定最快收敛的压缩策略}
+
+现有工作推导出了均匀压缩情况下D-EF-SGD的收敛速率，即算法收敛到指定精度需要的迭代次数。为了回答这个问题，我们首先推导出在相对压缩器和不同的压缩率下，带有误差反馈的D-EF-SGD的收敛率（算法见Algo.1）。我们推导出模型收敛到相同精度所需的训练迭代次数与压缩率之间的函数关系式。该推导考虑了该机器学习任务具有非凸性、一般凸性和强凸性的情况。其次，我们找到了有限通信环境下的主导项，主导项是主要影响算法收敛的项。方便起见，我们用$n$表示节点数量，用$\delta_i$表示第$i$个节点的压缩率，并且用$\Phi(\delta_1,\ldots,\delta_n)$表示主导项。$\Phi(\delta_1,\ldots,\delta_n)$与模型收敛到相同精度所需的迭代次数呈线性关系。第三，我们将寻找$\delta_i$的适当分配表述为了一个带有一个约束条件的$n$元齐次非线性优化问题。根据我们的尝试，我们无法
+直接用拉格朗日乘数法解决这个问题（该方法下的最优解在$\delta_i$的定义域外），我们把这个问题分成一个可以用拉格朗日乘数法解决的有一个约束条件的$n-1$元齐次非线性优化问题和一个寻找一元函数最小值的问题。最后，我们通过遍历$\Phi(\delta_1,\ldots,\delta_n)$在$n$种情况下的最小值，找到各节点的最优$\delta_i$，在这种压缩率分配策略条件下，算法收敛速度最快。
+
+
+
+%\fi
+\subsection{确定可以量化节点数据分布质量的指标}
+
+现有工作评价节点数据集的指标十分受限，这一方面是因为联邦学习中的隐私保护的要求，我们无法得到节点数据集中过于私人的信息，这是现实的限制；另一方面是目前还没有能衡量不同数据集的受到广泛认可的量化指标，找到这样一个量化指标较为困难。 
+
+\section{预期创新点}
+
+\subsection{确定可以量化节点数据分布质量的指标}
+
+我们通过实验发现，在固定的和有限的通信量下，给大节点设置较高的压缩率比统一压缩更快收敛；我们提出了DAGC，一种基于节点数据量的自适应梯度压缩算法。我们给出了DAGC的收敛率，并通过解决固定和有限的总通信约束下的$n$变量卡方非线性优化问题得到了最佳压缩率。我们在现实世界的Non-IID数据集和人工分割的NonIID数据集中都采用了DAGC；实验结果证实了我们理论的正确性，并表明与统一压缩相比，DAGC可以节省高达26.19$\%$的迭代次数以达到相同的精度。
+
+\subsection{实现基于节点数据分布的自适应梯度压缩策略}
+
+我们会首先提出可以量化节点数据分布质量的指标，根据这个指标，我们可以量化某一节点数据集对全局模型收敛的重要性，对于高重要性的节点，我们给予更高的被选择的概率，也会在训练过程中，让该节点传输更多数据量。我们从实验和理论上都证明了该策略的优越性。
+
+
+\iffalse
+中文论文的数学符号默认遵循 GB/T 3102.11—1993《物理科学和技术中使用的数学符号》
+
+\footnote{原 GB 3102.11—1993，自 2017 年 3 月 23 日起，该标准转为推荐性标准。}。
+该标准参照采纳 ISO 31-11:1992 \footnote{目前已更新为 ISO 80000-2:2019。}，
+但是与 \TeX{} 默认的美国数学学会（AMS）的符号习惯有所区别。
+具体地来说主要有以下差异：
+\begin{enumerate}
+  \item 大写希腊字母默认为斜体，如
+    \begin{equation*}
+      \Gamma \Delta \Theta \Lambda \Xi \Pi \Sigma \Upsilon \Phi \Psi \Omega.
+    \end{equation*}
+    注意有限增量符号 $\increment$ 固定使用正体，模板提供了 \cs{increment} 命令。
+  \item 小于等于号和大于等于号使用倾斜的字形 $\le$、$\ge$。
+  \item 积分号使用正体，比如 $\int$、$\oint$。
+  \item 行间公式积分号的上下限位于积分号的上下两端，比如
+    \begin{equation*}
+      \int_a^b f(x) \dif x.
+    \end{equation*}
+    行内公式为了版面的美观，统一居右侧，如 $\int_a^b f(x) \dif x$ 。
+  \item
+    偏微分符号 $\partial$ 使用正体。
+  \item
+    省略号 \cs{dots} 按照中文的习惯固定居中，比如
+    \begin{equation*}
+      1, 2, \dots, n \quad 1 + 2 + \dots + n.
+    \end{equation*}
+  \item
+    实部 $\Re$ 和虚部 $\Im$ 的字体使用罗马体。
+\end{enumerate}
+
+以上数学符号样式的差异可以在模板中统一设置。
+另外国标还有一些与 AMS 不同的符号使用习惯，需要用户在写作时进行处理：
+\begin{enumerate}
+  \item 数学常数和特殊函数名用正体，如
+    \begin{equation*}
+      \uppi = 3.14\dots; \quad
+      \symup{i}^2 = -1; \quad
+      \symup{e} = \lim_{n \to \infty} \left( 1 + \frac{1}{n} \right)^n.
+    \end{equation*}
+  \item 微分号使用正体，比如 $\dif y / \dif x$。
+  \item 向量、矩阵和张量用粗斜体（\cs{symbf}），如 $\symbf{x}$、$\symbf{\Sigma}$、$\symbfsf{T}$。
+  \item 自然对数用 $\ln x$ 不用 $\log x$。
+\end{enumerate}
+
+
+英文论文的数学符号使用 \TeX{} 默认的样式。
+如果有必要，也可以通过设置 \verb|math-style| 选择数学符号样式。
+
+关于量和单位推荐使用
+\href{http://mirrors.ctan.org/macros/latex/contrib/siunitx/siunitx.pdf}{\pkg{siunitx}}
+宏包，
+可以方便地处理希腊字母以及数字与单位之间的空白，
+比如：
+\SI{6.4e6}{m}，
+\SI{9}{\micro\meter}，
+\si{kg.m.s^{-1}}，
+\SIrange{10}{20}{\degreeCelsius}。
+
+
+
+\section{数学公式}
+
+数学公式可以使用 \env{equation} 和 \env{equation*} 环境。
+注意数学公式的引用应前后带括号，建议使用 \cs{eqref} 命令，比如式\eqref{eq:example}。
+\begin{equation}
+  \frac{1}{2 \uppi \symup{i}} \int_\gamma f = \sum_{k=1}^m n(\gamma; a_k) \mathscr{R}(f; a_k)
+  \label{eq:example}
+\end{equation}
+注意公式编号的引用应含有圆括号，可以使用 \cs{eqref} 命令。
+
+多行公式尽可能在“=”处对齐，推荐使用 \env{align} 环境。
+\begin{align}
+  a & = b + c + d + e \\
+    & = f + g
+\end{align}
+
+
+
+\section{数学定理}
+
+定理环境的格式可以使用 \pkg{amsthm} 或者 \pkg{ntheorem} 宏包配置。
+用户在导言区载入这两者之一后，模板会自动配置 \env{thoerem}、\env{proof} 等环境。
+
+\begin{theorem}[Lindeberg--Lévy 中心极限定理]
+  设随机变量 $X_1, X_2, \dots, X_n$ 独立同分布， 且具有期望 $\mu$ 和有限的方差 $\sigma^2 \ne 0$，
+  记 $\bar{X}_n = \frac{1}{n} \sum_{i+1}^n X_i$，则
+  \begin{equation}
+    \lim_{n \to \infty} P \left(\frac{\sqrt{n} \left( \bar{X}_n - \mu \right)}{\sigma} \le z \right) = \Phi(z),
+  \end{equation}
+  其中 $\Phi(z)$ 是标准正态分布的分布函数。
+\end{theorem}
+\begin{proof}
+  Trivial.
+\end{proof}
+
+同时模板还提供了 \env{assumption}、\env{definition}、\env{proposition}、
+\env{lemma}、\env{theorem}、\env{axiom}、\env{corollary}、\env{exercise}、
+\env{example}、\env{remar}、\env{problem}、\env{conjecture} 这些相关的环境。
+\fi

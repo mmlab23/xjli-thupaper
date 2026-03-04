@@ -1,0 +1,23 @@
+\begin{table}
+    % \resizebox{\linewidth}{!}{
+    \caption{对比不同 VQ 方法的重建效果}
+    \label{tab:vqs_compare}
+    \centering
+    \resizebox{0.8\linewidth}{!}{
+        \begin{tabular}{lcccccccc}
+            \toprule [1pt]
+            \noalign{\smallskip}
+            \multirow{2}{*}{Method}& \multicolumn{4}{c}{SoulDance Dataset} & \multicolumn{3}{c}{FineDance Dataset} & \multicolumn{1}{c}{AIST++ Dataset} \\  \cmidrule(lr){2-5} \cmidrule(lr){6-8} \cmidrule(lr){9-9}
+            \noalign{\smallskip}
+            & $all\downarrow$ & $body\downarrow$ & $hand\downarrow$ & $face\downarrow$ & $all\downarrow$ & $body\downarrow$ & $hand\downarrow$ & $body\downarrow$ \\
+            \noalign{\smallskip}\midrule [0.5pt]
+            \noalign{\smallskip}
+            Vanilla VQ (512) & 137.130 & 97.660 & 129.518  &4.013 &	137.646	& 96.598 & 136.329 & 42.513\\
+            Vanilla VQ (1024) & 136.752 & 95.809 & 128.628 & 3.739 & 136.785 & 97.328 & 135.194 & 41.369\\
+            RVQ-5 & 108.983 & 71.831 & 106.836 &  2.379 & 98.399 & 59.281 & 102.706 & 24.246 \\
+            HRVQ-5 (Ours) & \textbf{83.679} & \textbf{47.895} & \textbf{85.085} & \textbf{1.153} & \textbf{90.705} &\textbf{51.708} & \textbf{95.563} & \textbf{24.246} \\
+            \bottomrule [1pt] 
+            \noalign{\smallskip}
+    \end{tabular}}
+    % \vspace{1em}
+\end{table}

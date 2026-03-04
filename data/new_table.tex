@@ -1,0 +1,19 @@
+\begin{table}
+  \centering
+  \caption{Accuracy of different gradient compression algorithms with different skew ratios and $\Bar{\delta}$. The skew ratio measures the imbalance of the size distribution, and the average compression ratio $\Bar{\delta}$ measures the degree of restricted communication. The results show that DAGC outperforms Top-$\delta$ in both Image Classification and Speech Recognition tasks especially when the size distribution of workers is highly imbalanced and the communication is restricted.}
+  \begin{tabular}{|c|c|c|c|c|}
+    \toprule
+    模型\\@数据集 & 倾斜度 &% \makecell[c]{average\\ compression ratio} 
+$\Bar{\delta}$ & \textbf{DAGC} & Top-$\delta$\\
+    \midrule
+    \multirow{9}*{\makecell[c]{LSTM\\@SCs}} &$10$ & $10\%$ & $\mathbf{73.3}\% \pm \mathbf{0.3}\%$ & $73.2\% \pm 0.2\%$\\
+     CNN\\@CIFAR-$10$   &$10$                      \\
+    thuthesis-*.bst & BibTeX 参考文献表样式文件    \\
+    \midrule
+    thuthesis.dtx   & 模板的源文件，包括文档和注释 \\
+    thuthesis.cls   & 模板文件                     \\
+    thuthesis-*.bst & BibTeX 参考文献表样式文件    \\
+    \bottomrule
+  \end{tabular}
+  \label{table:2}
+\end{table}

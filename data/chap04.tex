@@ -1,0 +1,479 @@
+% !TeX root = ../thuthesis-example.tex
+
+\chapter{研究内容和方法}
+
+\section{给定通信总量条件下如何确定最快收敛的压缩策略}
+
+在本节中，我们解决了本研究中的核心挑战，即给定通信总量，如何在理论上确定每个工作者的压缩率？
+
+首先，我们展示了使用相对压缩器，各节点压缩率不同的D-EF-SGD的伪代码，表示为算法 \ref{algo:1}。其次，我们推导出算法 \ref{algo:1}的收敛速率。该收敛速率显示了模型收敛到相同精度的迭代次数与各节点压缩率$\delta_i$之间的相关性。我们综合考虑了非凸、凸和强凸的情况。%(textbf{Theorem\ref{theorem:1}, \ref{theorem:2}, \ref{theorem:3}}在Sec.\ref{IV-B}和Sec.\ref{IV-F}中证明) 
+第三，我们分析收敛率并找到主导项$\Phi(\delta_1,\ldots,\delta_n)$。第四，我们通过解决$\Phi(\delta_1,\ldots,\delta_n)$的最小值，得出最佳$\delta_i$，这是一个$n$元齐次非线性优化问题，有一个约束条件，即在固定和有限的总通信约束条件下。最后基于定理 \ref{theorem:4}，我们提出了数据量感知的梯度压缩算法DAGC（算法 \ref{algo:2}），它根据各节点数据集占比$p_i$和平均压缩率自适应地分配$\delta_i$。
+
+%\iffalse
+\begin{algorithm}[t]
+    \SetAlgoLined %显示end
+	\caption{使用相对压缩器，各节点压缩率不同的D-EF-SGD}%算法名字
+	\label{algo:1}
+    \KwIn{节点数量 $n$，模型初始参数 $\textbf{x}_0$， 步长 $\gamma$, 相对压缩器 $\textbf{C}$, 初始误差为零$\textbf{e}_0^i = \textbf{0}_d$, 第$i$个节点的训练权重 $p_i$, 各节点压缩率 $\delta_1,\ldots,\delta_n$} 
+	\KwOut{$\textbf{x}_T$}%输出
+	%some description\; %\;用于换行
+	\For{$t = 0, \ldots , T - 1 $}{
+	    \tcc{节点端}
+        \For{$i = 1, \ldots, n $}{
+            从服务器下载 $\textbf{x}_t$ \;
+    	    $\textbf{g}_t^i := \textbf{g}^i(\textbf{x}_t)$\;
+    	    $\hat{\Delta}_t^i := \textbf{C}_{\delta_i} (\textbf{e}_t^i + \textbf{g}_t^i )$\;
+    	    $\textbf{e}_{t+1}^i := \textbf{e}_t^i + \textbf{g}_t^i - \hat{\Delta}_t^i $\;
+    	    上传 $\hat{\Delta}_t^i$\;
+    	    }
+    	    {
+    	    \tcc{服务器端}
+    	    收集所有的 $\hat{\Delta}_t^i$\;
+    	    $\textbf{x}_{t+1} := \textbf{x}_t - \gamma\sum_{i=1}^n p_i\hat{\Delta}_t^i$\;
+    	    将 $\textbf{x}_{t+1}$ 广播到所有节点
+    	    }
+	}
+	return $\textbf{x}_T$\;
+\end{algorithm}
+
+\subsection{规则性假设}
+
+分布式机器学习理论分析中的标准假设是$L$-光滑和$\mu$-凸性。对于$\mu$-凸性，我们会分别讨论优化问题是强凸性情形（$\mu \neq 0$）和一般凸性情形($\mu = 0$)。
+
+\begin{assumption}
+我们假设对于任意第$i$个节点的优化目标$f_i,i \in [n]$，都有$L$-光滑性 \cite{stich2018sparsified}，即对任意$\textbf{x},\textbf{y} \in \mathbb{R}^d$:
+\begin{equation}
+\lVert \nabla f(\textbf{y}) - \nabla f(\textbf{x}) \rVert \leq L\lVert \textbf{y} - \textbf{x} \rVert \nonumber
+\end{equation}
+\label{assumption:1}
+\end{assumption}
+
+\begin{assumption}
+我们假设对于任意第$i$个节点的优化目标$f_i,i \in [n]$，都有$\mu$-凸性 \cite{stich2018sparsified}，即对任意$\textbf{x},\textbf{y} \in \mathbb{R}^d$:
+\begin{equation}
+f(\textbf{x}) - (\textbf{y}) \geq  \langle \nabla f(\textbf{y}),\textbf{x}-\textbf{y} \rangle + \frac{\mu}{2} \lVert \nabla f(\textbf{y}) - \nabla f(\textbf{x}) \rVert^2 \nonumber
+\end{equation}
+\label{assumption:2}
+\end{assumption}
+
+%(3) holds for all $\textbf{x},\textbf{y} \in \mathbb{R}^d$. And 
+
+%假设3是对噪音的假设，已经被xx论文提及
+\begin{assumption}
+我们假设对于任意第$i$个节点的优化目标$f_i,i \in [n]$，都可以获得到随机梯度 $g^i(\textbf{x}): \mathbb{R}^d \rightarrow  \mathbb{R}^d$ \cite{stich2019error}。为了简单起见，我们只考虑均匀有界噪声的有指导意义的情况：
+\begin{equation}
+g^i(\textbf{x})=\nabla f_i(\textbf{x})+\boldsymbol{\xi} ^i,
+\quad \mathbb{E}_{\boldsymbol{\xi} ^i}\boldsymbol{\xi} ^i = \textbf{0}_d, \quad \mathbb{E}_{\boldsymbol{\xi} ^ i} \lVert \boldsymbol{\xi} ^i \rVert^2 \leq \sigma^2, 
+\quad \\
+\forall \textbf{x} \in \mathbb{R}^d, \nonumber
+i \in [n]
+\end{equation}
+\label{assumption:3}
+\end{assumption}
+
+%假设4
+
+\begin{assumption}
+在这项工作中，我们考虑数据异构性 \cite{stich2020communication}。我们我们允许优化目标$f_i,i \in [n]$在每个节点上是不同的。我们通过常数$\zeta_i^2 \geq 0,Z^2 \geq 1$来衡量不相似性，这些常数约束了n个节点之间的差异性。我们有：
+\begin{equation}
+\lVert \nabla f_i(\textbf{x}) \rVert^2 \leq \zeta_i^2+Z^2\lVert\nabla f(\textbf{x})\rVert^2, \quad \forall \textbf{x} \in \mathbb{R}^d,i \in [n] \nonumber
+\end{equation}
+\label{assumption:4}
+\end{assumption}
+
+\subsection{算法\ref{algo:1}的收敛速度}
+
+\begin{theorem}
+（非凸情况下算法 \ref{algo:1}的收敛速度）。我们让 $f: \mathbb{R}^d \rightarrow \mathbb{R}$ 是$L$光滑的。那么存在一个步长$\gamma \leq \frac{\delta_{min}}{4LZ\sqrt{n C_Z}}$，其中 $C_Z = \sum_{i=1}^n\frac{\delta_{min}}{\delta_i}p_i^2$，使得算法 \ref{algo:1}最多进行
+\begin{equation}
+\begin{split}
+    \mathcal{O}(\frac{\sigma^2\sum_{i=1}^n p_i^2}{\epsilon^2}+\frac{\sqrt{n}(\zeta\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}+\sigma\sqrt{\sum_{i=1}^n p_i^2})}{\epsilon^{\frac{3}{2}} \sqrt{\delta_{min}} }
+    +\frac{\sqrt{n} Z\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}}{\epsilon \sqrt{\delta_{min}}})\cdot L F_0 
+\end{split}
+\label{theorem:1}
+\end{equation}
+轮迭代，就会满足$\mathbb{E}f(\textbf{x}_{out})-f^* \leq \epsilon $, 其中 $F_0 \geq f(\textbf{x}_0)-f^*$并且 $\textbf{x}_{out} = \textbf{x}_t$ 表示一个迭代序列 $\textbf{x}_t \in \left\{\textbf{x}_0, \ldots, \textbf{x}_{T-1}\right\}$，选择是随机且机会均等的。
+
+\end{theorem}
+
+\begin{theorem}
+
+（一般凸情况下算法 \ref{algo:1}的收敛速度，即$\mu = 0$）。我们让 $f: \mathbb{R}^d \rightarrow \mathbb{R}$ 是$L$光滑的。那么存在一个步长 $\gamma \leq \dfrac{\delta_{min}}{14LZ\sqrt{n C_Z}}$，其中 $C_Z = \sum_{i=1}^n\frac{\delta_{min}}{\delta_i}p_i^2$，使得算法 \ref{algo:1}最多进行
+\begin{equation}
+\begin{split}
+    \mathcal{O}(\frac{\sigma^2\sum_{i=1}^n p_i^2}{\epsilon^2}+\frac{\sqrt{n L}(\zeta\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}+\sigma\sqrt{\sum_{i=1}^n p_i^2})}{\epsilon^{3/2}\sqrt{\delta_{min}} }
+    +\frac{\sqrt{n} L Z\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}}{\epsilon\sqrt{\delta_{min}}})\cdot R_0^2 
+\end{split}
+\label{theorem:2}
+\end{equation}
+轮迭代，就会满足$\mathbb{E}f(\textbf{x}_{out})-f^* \leq \epsilon $, 其中 $F_0 \geq f(\textbf{x}_0)-f^*$并且 $\textbf{x}_{out} = \textbf{x}_t$ 表示一个迭代序列 $\textbf{x}_t \in \left\{\textbf{x}_0, \ldots, \textbf{x}_{T-1}\right\}$，选择是随机且机会均等的。
+
+\end{theorem}
+
+
+
+\begin{theorem}
+
+（强凸情况下算法 \ref{algo:1}的收敛速度，即$\mu > 0$）。我们让 $f: \mathbb{R}^d \rightarrow \mathbb{R}$ 是$L$光滑的。那么存在一个步长 $\gamma \leq \dfrac{\delta_{min}}{14LZ\sqrt{n C_Z}}$，其中 $C_Z = \sum_{i=1}^n\frac{\delta_{min}}{\delta_i}p_i^2$，使得算法 \ref{algo:1}最多进行
+\begin{equation}
+\begin{split}
+    \tilde{\mathcal{O}}(\frac{\sigma^2\sum_{i=1}^n p_i^2}{\mu \epsilon}+\frac{\sqrt{n L}(\zeta\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}+\sigma\sqrt{\sum_{i=1}^n p_i^2})}{\mu \sqrt{\delta_{min} \epsilon}}
+    +\frac{\sqrt{n} L Z\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}}{\mu \sqrt{\delta_{min}}})
+\end{split}
+\label{theorem:3}
+\end{equation}
+轮迭代，就会满足$\mathbb{E}f(\textbf{x}_{out})-f^* \leq \epsilon $，$\textbf{x}_{out} = \textbf{x}_t$ 表示一个迭代序列 $\textbf{x}_t \in \left\{\textbf{x}_0, \ldots, \textbf{x}_{T-1}\right\}$，选择是随机，被选择概率正比于$(1-min\left\{\frac{\mu \gamma}{2},\frac{\delta_{min}}{4}\right\})^{-t}$。
+
+\end{theorem}
+
+接下来的分析中，我们主要聚焦在定理 \ref{theorem:3}，其他的分析类似。
+\subsection{收敛速度分析}
+
+分析之前，我们记下$\Phi(\delta_1,\ldots,\delta_n)=\frac{\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}}{\sqrt{\delta_{min}}}$并添加一个假设，表述为假设 \ref{assumption:*}。
+\begin{assumption}
+在现实世界的数据集中，我们假设$(\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}})\zeta$的数量级大于$\sqrt{\sum_{i=1}^n p_i^2}\sigma$。
+\label{assumption:*}
+\end{assumption}
+该假设有两个原因。首先， $\delta_i$在有限的通信中倾向于取值$1\%$甚至更少 \cite{dgc,hardthreshold}，从而使$\zeta$的数量级增加。第二，在现实世界的非IID场景中， $\zeta$不能被忽视。大量的实验表明，在现实世界中使用梯度压缩会进一步减慢收敛速度\cite{niid2020icml}。
+
+我们分析了两种情况下的收敛率。
+
+第一种情况是没有梯度噪音的情况下。算法 \ref{algo:1}会以$\mathcal{O}(\frac{\sqrt{n L}(\zeta\sum_{i=1}^n\frac{p_i}{\sqrt{\delta_i}}+\sigma\sqrt{\sum_{i=1}^n p_i^2})}{\mu \sqrt{\delta_{min} \epsilon}})$的速率亚线性地收敛。鉴于 $\zeta > 0$，$\Phi(\delta_1,\ldots,\delta_2)$对收敛率有主导作用。
+
+第二种情况是有梯度噪声（$\sigma>0$）当$\epsilon$是$\delta_{min}$的高阶无穷小时，收敛率由$(\frac{\sigma^2\sum_{i=1}^n p_i^2}{\mu \epsilon})$决定，与$ \delta_{min}$和$\zeta$无关。当$\epsilon$的数量级大于或等于$\delta_{min}$时。由于假设 \ref{assumption:*}，$\Phi(\delta_1,\ldots,\delta_n)$对收敛率有主导作用。
+
+在接下来的讨论中，我们讨论的情况是$\sigma=0$和$\sigma > 0$，而$\epsilon$和$\delta$有相同数量级的情况，其中$\Phi(\delta_1,\ldots,\delta_n)$对收敛率的影响占主导。
+对于$\epsilon$是$\delta$的高阶，且$\sigma > 0$的情况，以前的工作已经分析过 \cite{stich2019error,stich2018sparsified,karimireddy2019error}，这里就不重复了。综上，我们认为$\Phi(\delta_1,\ldots,\delta_n)$是收敛速度的主导项。
+
+
+
+\iffalse
+%\begin{table}
+%    \centering
+%    \begin{tabular}{c|c}
+%         &  \\
+ %        & 
+%  \end{tabular}
+%    \caption{Caption}
+%    \label{tab:my_label}
+%\end{table}
+\begin{center}
+\begin{tabular}{ |l|l| } 
+\hline
+ $n$ & The number of nodes  \\ 
+$p_i$ & The training weight of the $i$-th node, $p_i \geq 0$ \\
+&  and $\sum_{i=1}^{n}p_i=1$ \\
+ $\textbf{x}_t^{i}$ & The local parameter in the $i$-th node in the \\&$t$-th iteration \\
+ $\textbf{x}_t$ & $\textbf{x}_t=\sum_{i=1}^{n}p_i\textbf{x}_t^{i}$\\
+$f_i(\textbf{x})$ & The objective function in the $i$-th node \\
+ $f(\textbf{x})$ &  $f(\textbf{x}):=\sum_{i=1}^{n}p_if_i(\textbf{x})$\\
+ $\nabla f(\textbf{x})$ & The gradient of $f$\\
+$L$ & $f$ is $L$-smooth \\ 
+ $\mu$ & $f$ is $\mu$-strong convexity \\
+$\delta$ & The compression ratio \\
+$\textbf{e}_t^{i}$ & The local error term \\
+$\textbf{e}_t$ &  $\textbf{e}_t=\sum_{i=1}^{n}p_i\textbf{e}_t^{i}$\\
+$\xi^i$ & The gradient noise in the $i$-th node\\
+$\zeta_i$ & The parameter measures the distance from node $i$'s\\&  local distribution to the global distribution.\\
+$\Bar{\zeta}$ & The parameter measures global data heterogeneity\\
+$M,\sigma^2$ & Two constants bound the gradient noise \\
+$G_t$ & $G_t:=\textbf{E}\lVert \nabla f(x_t)\rVert^2$,the mathematical expectation\\&of the objective function $f$ in the $t$-th iteration \\
+$E_t$ & The mathematical expectation of the total error \\&in the $t$-th iteration \\
+
+
+ 
+ \hline
+\end{tabular}
+\end{center}
+
+\fi
+
+\subsection{最优压缩率}
+
+在这个部分，我们会给出寻找最优压缩率的理论基础定理xx和一个低成本确定最优压缩率的算法。
+
+\begin{theorem}
+（最优压缩率）. 在总通信量确定的条件下，即$\sum_{i=1}^n \delta_i=n \Bar{\delta} $，我们有如下方程式。我们设定$\delta_j=\delta_{min}=min\{\delta_1,\ldots,\delta_n\}$ 并且表示 $P:=\sum_{i=1}^n p_i^{2/3}$ 那么$\Phi(\delta_1,\ldots,\delta_n)$ 的最小值可以被分为两种不同的情况。
+
+\noindent$\bullet$ \textit{第一种情况是 $j\neq n$}
+\begin{equation}
+\Phi(\delta_1,\ldots,\delta_n)  \geq \frac{1}{n\Bar{\delta_j}}(p_j(1+Q_j)+p_n Q_j(1+Q_j)),
+\label{theorem:4.4}
+\end{equation}
+其中 $Q_j=\frac{P-p_j^{2/3}}{p_n^{2/3}}$。该不等式取等号当且仅当满足 $\delta_j=\frac{n\Bar{\delta}}{Q_j+1}$ 和 $\delta_i=\frac{n\Bar{\delta}}{Q_j+1}\frac{p_i^{2/3}}{p_n^{2/3}}, i \neq j$。
+
+%缺一段Lemma 4的理论分析
+
+\noindent$\bullet$ \textit{第二种情况是 $j=n$}
+\begin{equation}
+\Phi(\delta_1,\ldots,\delta_n)  \geq \frac{1}{n\Bar{\delta}}(p_j(1+Q_j)+p_{n-1} Q_j(1+Q_j)),
+\label{theorem:4.5}
+\end{equation}
+其中 $Q_j=\frac{P-p_j^{2/3}}{p_{n-1}^{2/3}}$。 该不等式取等号当且仅当满足 $\delta_j=\frac{n\Bar{\delta}}{Q_j+1}$ 和 $\delta_i=\frac{n\Bar{\delta}}{Q_j+1}\frac{p_i^{2/3}}{p_{n-1}^{2/3}}, i \neq j$。
+\label{theorem:4}
+\end{theorem}
+
+\subsection{数据感知的梯度压缩算法DAGC}
+
+
+\begin{algorithm}[t]
+    \SetAlgoLined %显示end
+	\caption{数据量感知的梯度压缩算法DAGC}%算法名字
+	\label{algo:2}
+    \KwIn{节点数量$n$， 以降序排列的训练权重$p_i$，平均压缩率 $\Bar{\delta}$} 
+	\KwOut{各节点压缩率$\delta_1,\ldots,\delta_n$}%输出
+	%some description\; %\;用于换行
+	\tcc{$\phi_j$ 是$\Phi(\delta_1,\ldots,\delta_n)$的最小值，当 $\delta_j=min\{\delta_i\}$时}
+	初始化 $\phi_{min} = +\infty$\; 
+	\For{$j = n, n-1, \ldots, 1$}{
+	    %\tcc{Worker side}
+	    \eIf{$j == n$}{
+	    使用方程\ref{theorem:4.4}的右侧来计算 $\phi_j$\;
+	    }{\eIf{$p_j == p_{j-1}$}{
+	    \tcc{如果该权重与上次计算的权重重复，跳过这次计算}
+	    $\phi_j=\phi_{min}$\;
+	    }{
+	    使用方程\ref{theorem:4.5}的右侧来计算 $\phi_j$\;
+	    }
+	    }
+	    \If{$\phi_j<\phi_{min}$}{
+	    $\phi_{min}=\phi_j$ 并且更新最优的 $\delta_1,\ldots,\delta_n$\;
+	    }
+	}
+	Return $\delta_1,\ldots,\delta_n$\;
+\end{algorithm}
+
+算法 \ref{algo:2} 提供了DAGC的伪代码。DAGC的设计十分轻便，具体思路如下：1）它根据公理 \ref{theorem:4} 来遍历 $j$，让$\delta_j=min\{\delta_1,\ldots,\delta_n\}$；2)当$\Phi(\delta_1,\ldots,\delta_n)$  取小值时，它会更新$\delta_i, i\in[1,n]$ 。遍历后的压缩率即是给定总通讯量条件下的最佳参数。
+
+
+这个函数的计算成本很低，其结果可以多次使用。一次遍历所需的时间复杂度为$\mathcal{O}(n)$。对于一个给定的Non-IID情形，我们只需要计算一次分配给每个节点的最佳$\delta_i$ ，就可以多次使用这个结果。由于最优解中各节点的占比是固定的，即使$\Bar{\delta}$因为其他原因变成了新的压缩率（如网络环境改善等），表示为$\Bar{\delta}_{new}$，我们可以用$\delta_i=\delta_i\dfrac{\Bar{\delta}_{new}}{\Bar{\delta}}$来等比例的更新各节点压缩率。
+
+\subsection{定理 \ref{theorem:1}到\ref{theorem:3}的证明}
+我们按照之前的工作 \cite{stich2019error}的证明方法定义了一个虚拟序列：
+\begin{equation}
+\tilde{\textbf{x}}_0 = \textbf{x}_0, \quad \tilde{\textbf{x}}_{t+1} := \tilde{\textbf{x}}_{t}-\gamma\sum_{i=1}^n p_i g_t^i \nonumber.
+\end{equation}
+误差项代表虚拟序列到真实模型参数的距离。
+\begin{equation}
+ \tilde{\textbf{x}}_{t} - \textbf{x}_{t} = \gamma \sum_{i=1}^n p_i \textbf{e}_t^i \nonumber.
+\end{equation}
+接下来我们会使用如下符号 $\tilde{F}_t:=\mathbb{E} f(\tilde{\textbf{x}}_t) - f^* $， $F_t:=\mathbb{E} f(\textbf{x}_t) - f^* $, $G_t:=\textbf{E}\lVert \nabla f(x_t)\rVert^2$， $E_t=\sum_{i=1}^n p_i^2 \mathbb{E}\lVert \textbf{e}_t^i \rVert^2$。
+\begin{lemma}
+让$f$是$L$-光滑的。如果步长$\gamma \leq \frac{1}{4L}$，那么对算法 \ref{algo:1}满足：
+\begin{equation}
+\label{lemma:1a}
+    \tilde{F}_{t+1}\leq \tilde{F}_t - \frac{\gamma}{4}G_t + \gamma^2 \frac{L \sum_{i=1}^n p_i^2\sigma^2}{2} + \gamma^3 \frac{n L^2}{2} E_t,
+\end{equation}
+如果$f$ 还是具有$\mu$-凸性的，
+\begin{equation}
+\label{lemma:1b}
+    X_{t+1}\leq (1-\frac{\gamma \mu}{2})X_t - \frac{\gamma}{2}F_t + \gamma^2 \sum_{i=1}^n p_i^2\sigma^2 + 3 \gamma^3 n L E_t.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+类似于和之前工作\cite{stich2020communication,stich2019error}的理论分析，我们有
+\begin{eqnarray}
+ \tilde{F}_{t+1}&\leq& \tilde{F}_t - \frac{\gamma}{4}G_t\nonumber\\
+ &+& \gamma^2 \frac{L}{2} \mathbb{E}\lVert \sum_{i=1}^n p_i \xi _t^i\rVert^2 + \gamma^3 \frac{L^2}{2} \mathbb{E}\lVert \tilde{\textbf{x}}_t - \textbf{x}_t \rVert^2 \nonumber, \\
+ X_{t+1}&\leq& (1-\frac{\gamma \mu}{2})X_t - \frac{\gamma}{2}F_t\nonumber\\
+ &+& \gamma^2 \mathbb{E}\lVert \sum_{i=1}^n p_i \xi _t^i\rVert^2 + 3 \gamma^3 L \mathbb{E}\lVert \tilde{\textbf{x}}_t - \textbf{x}_t \rVert^2 \nonumber.
+\end{eqnarray}
+根据$\xi_t^i$ 的独立性和假设3，我们有
+\begin{equation}
+    \mathbb{E}_{\xi_t}\lVert \sum_{i=1}^n p_i \xi _t^i\rVert^2 = \sum_{i=1}^n p_i^2 \mathbb{E}_{\xi_t}\lVert\xi _t^i\rVert^2 \leq  \sum_{i=1}^n p_i^2 \sigma^2.  \nonumber
+\end{equation}
+进一步的，我们有
+\begin{equation*}
+\mathbb{E}\lVert \tilde{\textbf{x}}_t - \textbf{x}_t \rVert^2 = \mathbb{E}\lVert \sum_{i=1}^n p_i e_t^i \rVert^2 \leq\footnote{这个不等式是由于 
+$\lVert \sum_{i=1}^k a_i \rVert^2 \leq k \sum_{i=1}^k \lVert a_i\rVert^2$.} n\sum_{i=1}^n p_i^2\mathbb{E}\lVert e_t^i \rVert^2 = n E_t.
+\end{equation*}
+\end{proof}
+
+\begin{lemma}
+可以认为
+\begin{equation}
+\begin{split}
+E_{t+1} &\leq (1-\frac{\delta_{min}}{2})E_t+\frac{2}{\delta_{min}}(C_{\zeta}\zeta^2+C_{Z} Z^2 G_t)+\sum_{i=1}^n p_i^2 \sigma ^2\\
+&where~C_{\zeta} = C_{Z} = \sum_{i=1}^n\frac{\delta_{min}}{\delta_i}p_i^2.
+\label{lemma:2a}
+\end{split}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+类似于和之前工作\cite{stich2020communication,stich2019error}的理论分析，我们有
+\begin{equation}
+\begin{split}
+    \mathbb{E}_{\xi_t^i,C_\delta}\lVert \textbf{e}_{t+1}^i\rVert^2 
+    &\leq (1-\frac{\delta}{2})\lVert \textbf{e}_{t}^i\rVert^2+\frac{2}{\delta}\lVert\nabla f_i(\textbf{x}_t)\rVert^2+(1-\delta)\sigma^2 \\
+    &\leq (1-\frac{\delta}{2})\lVert \textbf{e}_{t}^i\rVert^2+\frac{2}{\delta}(\zeta_i^2+Z^2\lVert\nabla f(\textbf{x}_t)\rVert^2)+\sigma^2,
+\label{lemma:2b}
+\end{split}
+\end{equation}
+最后的不等式遵循假设 \ref{assumption:4}。之后我们将不同节点的不同压缩率带入公式 \ref{lemma:2b}，并将结果相加，完成证明
+\begin{equation}
+\begin{split}
+    E_{t+1} &\leq (1-\frac{\delta_{min}}{2})\sum_{i=1}^n p_i^2 \lVert \textbf{e}_{t}^i\rVert^2\\&+\frac{2}{\delta_{min}}(\sum_{i=1}^n\frac{\delta_{min}}{\delta_i}p_i^2) (\zeta ^2+Z^2 G_t)+\sum_{i=1}^n p_i^2 \sigma^2 \nonumber\\
+    &where~\zeta=max\{\zeta_1,\ldots,\zeta_n\}, \delta_{min} = min(\delta_1,\ldots,\delta_n)
+\end{split}
+\end{equation}
+\end{proof}
+
+\begin{lemma}
+(Lyapunov函数)。让$f$是$L$-光滑的，并且存在步长$\gamma\leq\dfrac{\delta_{min}}{4L Z\sqrt{n C_Z }}$。那么就可以认为
+\begin{eqnarray}
+\label{lemma:3a}
+\Xi_{t+1}&\leq \Xi_{t} - \frac{\gamma}{8}G_t + \gamma ^2 \frac{L \sum_{i=1}^n p_i^2 \delta ^2}{2}+ \gamma ^3 \left(\frac{L^2 n  }{\delta_{min}}\right)\left(\frac{2 C_{\zeta} \zeta^2}{\delta_{min}}+\sum_{i=1}^n p_i^2\sigma^2\right) \nonumber\\
+&where~ \Xi_t:= \tilde{F}_t+b E_t, b= \dfrac{\gamma^3 L^2 n}{\delta_{min}}
+\label{lemma:4.3.1}
+\end{eqnarray}
+进一步，让$f$是$L$-光滑和$mu$-凸性的，并且步长满足$\gamma \leq \dfrac{\delta_{min}}{14 L Z \sqrt{ n C_{Z}}}$，我们有
+\begin{eqnarray}
+\label{lemma:3b}
+    \Psi_{t+1}&\leq \left(1-min\left\{\frac{\gamma \mu}{2},\frac{\delta}{4}\right\}\right)\Psi_{t} - \frac{1}{8L}G_t+\gamma ^2\sum_{i=1}^n p_i^2 \sigma ^2 + \gamma ^3\left(\frac{12 L n}{\delta_{min}}\right)\left (\frac{2 C_{\zeta} \zeta ^2}{\delta_{min}}+\sum_{i=1}^n p_i^2\sigma^2\right) \nonumber\\
+    &where~\Psi_t := X_t +a E_t,a = \dfrac{12\gamma^3 n L}{\delta_{min}}
+\label{lemma:4.3.2}
+\end{eqnarray}
+\end{lemma}
+
+\begin{proof}
+对于光滑的函数，我们将公式 \ref{lemma:1a}和\ref{lemma:2a}代入$\Psi_{t+1} := X_{t+1} +a E_{t+1}$的右侧。
+\begin{equation}
+\begin{split}
+    \Xi_{t+1} 
+             &\leq \tilde{F}_t + b E_t +(\frac{2b}{\delta_{min}}C_Z Z^2 - \frac{\gamma}{4})G_t + \gamma^2 \frac{L\sum_{i=1}^n p_i^2 \sigma^2}{2}+\frac{2b C_{\zeta} \zeta^2}{\delta_{min}} + b\sum_{i=1}^n p_i^2\sigma^2 \\
+             &= \Xi_{t} + \frac{\gamma}{8}(\frac{16\gamma^2 L^2 n C_Z Z^2}{\delta_{min}^2} - 2)G_t +\gamma^2 \frac{L\sum_{i=1}^n p_i^2 \sigma^2}{2} + \gamma^3 (\frac{2L^2 n C_{\zeta}\zeta^2}{\delta_{min}^2}+\frac{L^2 n \sum_{i=1}^n p_i^2}{\delta_{min}}\sigma^2 )\nonumber
+\end{split}
+\end{equation}
+由于$\gamma \leq \dfrac{\delta_{min}}{4L Z \sqrt{n C_Z }}$，不等式\ref{lemma:4.3.1}的证明结束。之后我们声明$\gamma \leq \dfrac{\delta_{min}}{14 L Z \sqrt{ n C_{Z}}}$，对于凸函数，我们有
+\begin{equation}
+\begin{split}
+    \Psi_{t+1} &\leq (1-\frac{\gamma \mu}{2})X_t +a(1-\frac{\delta_{min}}{2}+\frac{3\gamma^3 n L}{a})E_t + (\frac{4a}{\delta_{min}} L Z^2C_Z - \frac{\gamma}{2})F_t\\
+    &+ \frac{2a}{\delta_{min}}C_{\zeta}\zeta^2 + \gamma^2 \sum_{i=1}^n p_i^2 \sigma^2 +a \sum_{i=1}^n p_i^2 \sigma^2\\
+    &\leq (1-min\left\{\frac{\gamma \mu}{2},\frac{\delta_{min}}{4}\right\})\Psi_t + \frac{\gamma}{4} (\frac{192\gamma^2 n L^2 Z^2 C_Z}{\delta_{min}^2}-2)F_t \\
+    &+ \gamma^2 \sum_{i=1}^n p_i^2 \sigma^2 + \gamma ^3(\frac{12 L n}{\delta_{min}}) (\frac{2 C_{\zeta} \zeta ^2}{\delta_{min}}+\sum_{i=1}^n p_i^2\sigma^2) \\
+    &\leq (1-min\left\{\frac{\gamma \mu}{2},\frac{\delta_{min}}{4}\right\})\Psi_{t} - \frac{\gamma}{8L}G_t + \gamma ^2\sum_{i=1}^n p_i^2 \sigma ^2 + \gamma ^3(\frac{12 L n}{\delta_{min}}) (\frac{2 C_{\zeta} \zeta ^2}{\delta_{min}}+\sum_{i=1}^n p_i^2\sigma^2) \nonumber
+\end{split}
+\end{equation}
+在最后一个不等式中，我们用$f$的$L$-光滑性，即$G_t \leq 2L F_t$。这完成了不等式 \ref{lemma:4.3.2}的证明。
+\end{proof}
+
+对于非凸函数，我们将推论 \ref{lemma:3a} 带入工作 \cite{stich2020communication}附录F中的推论27中，就完成了定理 \ref{theorem:1}的证明。对于$\mu = 0$，我们将推论 \ref{lemma:3b}带入工作 \cite{stich2020communication}附录F中的推论27中，就完成了定理\ref{theorem:2}的证明。对于强凸函数即$\mu > 0$，我们将推论 \ref{lemma:3b} 带入工作 \cite{stich2020communication}附录F中的推论25中，就完成了定理\ref{theorem:3}的证明。
+
+\subsection{定理 \ref{theorem:4}的证明}
+
+注意到原先的问题等同于找到$\Phi(\delta_1,\ldots,\delta_n)=\frac{\frac{p_1}{\sqrt{\delta_1}}+\ldots+\frac{p_n}{\sqrt{\delta_n}}}{\sqrt{\delta_{min}}}$ 在限制条件 $\sum_{i=1}^n \delta_i=n\Bar{\delta}$和$\delta_i >0, \forall i \in [1,n]$条件下的局部最优解。我们将对定理 \ref{theorem:4}的证明分为两个部分。第一步，是将在一个限制条件下的$n$元优化问题转换为一个单变量的优化问题（通过 \ref{lemma:4}）。第二步，是求解这个单变量优化问题的最值。
+
+\begin{lemma}
+假设 $a_i,b_i >0, \forall i \in [1,n]$，有 $\sum_{i=1}^n a_i=A$ ($A$ 是一个常数), $b_i$ 都是常数，那么我们有
+\begin{equation}
+    \sum_{i=1}^n \frac{b_i}{\sqrt{a_i}} \geq A^{-\frac{1}{2}}(\sum_{i=1}^n b_i^{\frac{2}{3}})^{\frac{3}{2}}.
+\label{lemma:4}
+\end{equation}
+当且仅当 $a_i= A b_i^{\frac{2}{3}}(\sum_{i=1}^n b_i^{\frac{2}{3}})^{-1}$时，不等式取等号。
+\end{lemma}
+\begin{proof}
+在$a_i$的约束条件下，我们定义一个拉格朗日函数如下：
+\begin{equation}
+\mathbb{L}=\sum_{i=1}^n \frac{b_i}{
+\sqrt{a_i}}+\lambda (\sum_{i=1}^n a_i-A). \nonumber
+\end{equation}
+根据拉格朗日乘数法取最优解的情形，我们有
+\begin{equation}
+\left\{
+             \begin{array}{ll}
+             \frac{ \partial \mathbb{L} }{ \partial a_i }&=-\frac{1}{2}b_i a_i^{-\frac{3}{2}}+\lambda = 0,  \forall i \in [1,n]\\
+             \frac{ \partial \mathbb{L} }{ \partial \lambda }&=\sum_{i=1}^n a_i-A=0 \nonumber
+             \end{array}
+\right. .
+\end{equation}
+通过求解上述方程组，证明得证。
+\end{proof}
+
+通过定理 \ref{theorem:4}，我们将 $\Phi(\delta_1,\ldots,\delta_n)$ 转化为一个一维函数：我们假设 $\delta_{min}=\delta_j \leq min\{\delta_i\}, i\in[1,n]\setminus \{j\}$ 并且当 $i\in[1,j-1]$时设 $b_i=p_i$，当 $i \in [j+1,n]$时设$b_i=p_{i+1}$ 。我们令$a_i=\delta_i$并且 $A=(n\Bar{\delta}-\delta_j)$，则有
+\begin{equation}
+    \Phi(\delta_1,\ldots,\delta_n) \geq \frac{p_j}{\delta_j} + \frac{(P-p_j^{\frac{2}{3}})^\frac{3}{2}}{\sqrt{(n\Bar{\delta}-\delta_j)\delta_j}},\,\text{where}\, P=\sum_{i=1}^n p_i^{\frac{2}{3}},
+\label{lemma:5a}
+\end{equation}
+不等式 \ref{lemma:5a} 取等号当且仅当 $\delta_i= (n\Bar{\delta}-\delta_j) p_i^{\frac{2}{3}}(P-p_j^{\frac{2}{3}})^{-1}, i \neq j$，这意味着我们有 $\frac{\delta_i}{\delta_k}=\frac{p_i^{2/3}}{p_k^{2/3}}, \forall i,k\in[1,n]\setminus \{j\}$ 如果取等号的话。 因为 $p_i$ 是以降序排列的（即如果某个节点序号最大，那么他的就有最小的压缩率），如果 $j \in [1,n-1]$那么 $min\{\delta_i\}= \delta_n$。如果 $j=n$，那么我们就有 $min\{\delta_i\}=\delta_{n-1}$. 
+
+我们注意到不等式\ref{lemma:5a}的右侧取最小值是取决于$\delta_j$的范围，我们接下来会分别讨论$j\in[1,n-1]$和$j=n$两种情况。
+\noindent$\bullet$如果$j \in [1,n-1]$，我们有 
+\begin{equation}
+    \delta_{min}=\delta_j=\frac{(n\Bar{\delta}-\delta_j)p_n^{\frac{2}{3}}}{P-p_j^{\frac{2}{3}}}. \nonumber
+\end{equation}
+
+我们令 $Q_j=\frac{P-p_j^{2/3}}{p_n^{2/3}},j\in[1,n-1]$，使用 $\delta_j \leq min\{\delta_i\}$。 之后我们会得到 $\delta_j$的定义域，即 $\delta_j \in (0,\frac{n\Bar{\delta}}{Q_j+1}]$. 我们令 $H(\delta_j)=\frac{p_j}{\delta_j}+\frac{(P-p_j^{\frac{2}{3}})^\frac{3}{2}}{\sqrt{(n\Bar{\delta}-\delta_j)\delta_j}}$ 并且求导$H(\delta_j)$:
+
+\begin{equation}
+    H'(\delta_j)=  -p_j \delta_j^{-2}-\frac{1}{2}(P-p_j^{\frac{2}{3}})^{\frac{3}{2}}[(n\Bar{\delta}-\delta_j)\delta_j]^{-\frac{3}{2}}(n\Bar{\delta}-2\delta_j) < 0. \nonumber
+\end{equation}
+
+因此我们得到$H(\delta_j)$的最值，当$\delta_j=\frac{n\Bar{\delta}}{Q_j+1}$时：
+
+\begin{equation}
+%\begin{split}
+    H(\delta_j)\geq H(\frac{n\Bar{\delta}}{Q_j+1})=\frac{1}{n\Bar{\delta}}(p_j(1+Q_j)+p_n Q_j(1+Q_j)).
+%\end{split}
+\label{lemma:5b}
+\end{equation}
+
+我们合并 \ref{lemma:5a} 和 \ref{lemma:5b} 从而完成了第一种情况 （$j\neq n$）的证明。
+
+\noindent$\bullet$ 如果 $j=n$，我们令$Q_n=\frac{P-p_n^{2/3}}{p_{n-1}^{2/3}}$ 并且有
+
+\begin{equation}
+    min\{\delta_i\}= \delta_{n-1}=\frac{n\Bar{\delta}-\delta_n}{Q_n}. \nonumber
+\end{equation}
+
+我们得到$\delta_n$的范围是$(0,\dfrac{n\Bar{\delta}}{Q_n+1} ]$。在这个范围，$H'(\delta_j)<0$ (这里的证明与$j \neq n$中的证明一样)，我们有 
+
+\begin{equation}
+%\begin{split}
+    H(\delta_j)\geq H(\frac{n\Bar{\delta}}{Q_n+1} )=\frac{1}{n\Bar{\delta}}(p_n(1+Q_n)+p_{n-1} Q_n(1+Q_n)).
+%\end{split}
+\label{lemma:5c}
+\end{equation}
+
+我们合并 \ref{lemma:5a} 和 \ref{lemma:5c} 从而完成了第二种情况 ($j=n$)的证明。
+
+
+\section{确定量化节点数据分布质量的指标}
+
+我们希望提出一个指标来衡量节点数据集的质量。但是用一个精确的标量来衡量一个庞大的数据分布本身就会造成很严重的信息丢失和片面估计。此外，新型分布式机器学习（如联邦学习）中对个人隐私的保护日益增强，我们能得到的信息量也极为有限，这就给我们确定这个衡量指标极度困难。为此，我们希望提出一个相对指标而不是绝对指标来衡量节点影响力，我们采用的也是数据集中服务器常规收集的不妨害隐私的两个参数，数据量和数据种类来构成这个影响力指标。
+
+受到工作\cite{accordion}的启发，我们希望能从所有节点中选择出影响力最大的节点，我们称为大节点。根据我们以及进行的测量实验结果，我们有以下三点结论：第一，大节点参与训练的频率与全局模型质量呈正相关；第二，压缩对大节点梯度造成的损失决定了梯度压缩对全局模型带来的精度损失；第三，时间维度上，改变大节点压缩率带来的影响始终大于其他节点，并且这个影响随着迭代数的增加而递减。
+
+
+
+我们用稀疏化梯度压缩算法的临界状态来评估节点影响力的大小，判断大节点的算法具体可见算法 \ref{alg:judge}。该算法是一个启发式的算法，有两个依据：第一个是梯度压缩算法会放大Non-IID的负面影响，工作 \cite{niid2020icml}通过详尽的实验为这个结论提供了实验依据，工作 \cite{stich2020communication}则从理论分析的角度为该观点提供了理论支撑；第二个是梯度压缩算法不会改变Non-IID的影响力顺序，该结论引自工作 \cite{CFedAVG}的摘要和理论部分的证明。
+
+\begin{algorithm}
+\caption{判定大节点 }
+\label{alg:judge}
+\SetAlgoLined
+\textbf{input}: 候选节点集合 \{$j_1,\ldots j_{[Number\ of\ Candidate Clients]}$\}\\
+\textbf{output}: 大节点的序号 $e$\\
+\textbf{init}: 保守压缩率$k_c$。激进压缩率 $k_a$。
+预训练迭代数 $t$.\\
+%Initialize replay buffer $\mathcal{B}$; \\
+%Initialize hyperparameter $\beta$; \\ 
+%Set target Q-function parameters equal to main parameters $\phi_{targ, 1} \leftarrow \phi_1, \phi_{targ, 2} \leftarrow \phi_2$;\\
+\For{$j \in$ \{$j_1,\ldots j_{[Number\ of\ Candidate Clients]}$\}}{
+    $K\leftarrow[k_c,\ldots[Number\ of\  Clients]]$\\
+    $K_{[j]}\leftarrow k_a$\\
+    按照约定的轮数$t$来训练，按照$K$来设置节点压缩率，得到精度 $acc_1$\\
+    $K\leftarrow[k_a,\ldots[Number\ of\  Clients]]$\\
+    $K_{[j]}\leftarrow k_c$\\
+    按照约定的轮数$t$来训练，按照新设定的$K$设置，得到精度 $acc_2$\\
+    \If{$acc_1 \geq acc_2$}{
+        return $j$\\
+    }
+}
+return NULL\\
+\end{algorithm}
+
+上述算法存在两个缺陷，第一是该算法极其消耗资源，等同于大量的增加了训练时间；第二是当节点数量很多时，每个节点被选择的概率都很低，此时该算法的检测效果大幅度降低。为了提升算法效果，需要将待测节点和随机选择的几个固定阶段保持连接，对网络要求较高。为了弥补该不足，节约成本，简化筛选方法，我们也会在之后进行工程上的方法，通过大量实验得到关于象节点的数值判定。
+
+为了筛选出这个大节点，我们提出了一个评价节点影响力的函数叫节点值（Node Value），这个值越大，代表一个节点的影响力越大。节点值最大的节点就是大节点。由于我们要确定的是节点的相对影响力，所以我们定义$SR$为该节点的数据集尺寸比上其余节点的数据集尺寸的和，$CR$是该节点的数据集类的数量比上其余所有节点数据集的类的和。由于一个节点在训练中的权重和他的数据集大小是线性相关的，所以我们认为节点值与$SR$大小是线性相关的。之后为了得到节点值与$CR$的关系，我们希望能找到临界情况来让我们方便构造等式。因为节点值是衡量节点影响力的指标，所以在临界状态下，我们认为大节点的节点值等于其余所有节点的节点值的和。临界状态即为算法 \ref{alg:judge}中$acc_1=acc_2$。之后我们将临界状态进行连接，就得到了关于数据重要性的函数，即为所求。

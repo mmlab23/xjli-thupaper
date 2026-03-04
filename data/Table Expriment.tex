@@ -1,0 +1,36 @@
+
+\begin{table*}[!th]
+\caption{Summary of the experiment settings used in this work.}
+\label{table:1}
+\centering
+\begin{threeparttable}
+\begin{tabular}{ccccccc}
+   \toprule
+   Task & Model  & Dataset & Quality metric &  Training iterations & Experiment Section \\
+   \midrule
+   \multirow{3}{*}{Image Classification} &   Logistic%\tnote{**}
+   & FMNIST \cite{fmnist}  & Artificially partitioned Non-IID & $5000$ & Sec. \ref{III}\\
+    &   CNN%\tnote{*}  
+   & CIFAR-$10$ 
+   \cite{cifar10} & Artificially partitioned Non-IID &  $20000$ & Sec. \ref{V}\\
+   &    VGG11s & Flickr \cite{niid2020icml} & Real-world Non-IID & $50000$ & Sec. \ref{V} \\
+   \midrule
+   Speech Recognition &   LSTM &  SCs\cite{warden2018speech} & Artificially partitioned Non-IID &   $50000$ & Sec. \ref{III}, \ref{V} \\
+   \bottomrule
+   
+\end{tabular}
+\iffalse
+\begin{tablenotes}
+        \footnotesize
+        \item[*] a four-layer convolution neural network from \cite{fed_learning}  
+        \item[**] a Simplified version of VGG11
+\end{tablenotes}
+\fi
+\end{threeparttable}
+\label{benchmark}
+\end{table*}
+ 
+
+%\footnotetext{}
+%\footnotetext{}
+   %Language Modeling &   \makecell[c]{LSTM-2Layers \\ 1500 hidden layers} &  SpeechCommends & Artificially partitioned Non-IID & Top-1 Accuracy  &  10000 \\

@@ -1,0 +1,24 @@
+\begin{table}
+    \caption{HRVQ 和 MMR 的消融实验}
+    \label{tab:abl_soulnet} 
+    \centering
+    \resizebox{0.6\linewidth}{!}{
+        \begin{tabular}{lccccc}
+            \toprule [1pt]
+            Method
+            & FID $\downarrow$ & Div $\uparrow$ & MM $\uparrow$ & BAS $\uparrow$ & MMR-MS $\downarrow$ \\
+            \noalign{\smallskip}\midrule[0.5pt]
+            \noalign{\smallskip}
+            VQ-512 & 1.610 & 0.540 & 0.509  &0.237 &0.703\\
+            VQ-512 + MMR & 1.552 & 0.563 & 0.576  &0.241 &0.697\\
+            RVQ-512 & 0.082 & 1.308 & 1.233  &0.216 &0.571\\
+            RVQ-512 + MMR & 0.067 & \textbf{1.329} & 1.250  &0.242 &0.540\\
+            RVQ-1024 + MMR & 0.090 & 1.182 & 1.228  &0.234 &0.603\\
+            HRVQ-512 & 0.048 & 1.303 & 1.289  &0.240 &0.418\\
+            HRVQ-512 + MMR & \textbf{0.029} & 1.312 & \textbf{1.310}  &\textbf{0.244} &\textbf{0.369}\\
+            \bottomrule [1pt] 
+            %\noalign{\smallskip}
+        \end{tabular}
+        }
+
+\end{table}

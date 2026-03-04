@@ -1,0 +1,18 @@
+\begin{table}[ht]
+\centering
+\caption{音乐对齐策略消融实验}
+\label{tab:abl_alignloss} 
+\resizebox{0.6\linewidth}{!}{
+	\begin{tabular}{lccccccc}
+	\toprule [1pt] 
+	\multicolumn{2}{c}{Ablations} & \multicolumn{5}{c}{Metrics} \\ \cmidrule(lr){1-2}   \cmidrule(lr){3-7}   
+        $\mathcal{L}_{\text{Align-body}}$  & $\mathcal{L}_{\text{Align-whole}}$ & FID $\downarrow$ & Div $\uparrow$ & MM $\uparrow$ & BAS $\uparrow$ & MMR-MS $\downarrow$ \\
+	\noalign{\smallskip}\hline\noalign{\smallskip}
+         \checkmark  & \checkmark &  \textbf{0.029} & 1.312 & 1.310  &\textbf{0.244} &\textbf{0.369}\\
+         \checkmark  &   &0.031  &1.331  &1.327&0.242&0.387\\
+         &  \checkmark &0.042  &\textbf{1.344} &\textbf{1.338}&0.237&0.372\\
+		\bottomrule [1pt] 
+               \noalign{\smallskip}
+	\end{tabular}}
+        % \vspace{-1em}  
+\end{table}

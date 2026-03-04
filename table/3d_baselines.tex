@@ -1,0 +1,20 @@
+% 需要在导言区：\usepackage{booktabs}
+\begin{table}[t]
+\centering
+\caption{\textbf{3D scene editing}. Quantitative comparison of on 3D scene editing. \sname can achieve plug and play. After using \sname,  the capabilities of Anydoor have been significantly improved on 3D scenes editing, which be marked red in the table.
+}\label{tab:3d_table}
+\setlength{\tabcolsep}{6pt}    % 列间距
+\renewcommand{\arraystretch}{1.1} % 行距
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+Method & CLIP Directional Similarity($\uparrow$) & CLIP-I($\uparrow$) & LPIPS($\downarrow$) \\
+\midrule
+IN2N~\cite{brooks2022instructpix2pix} & \textbf{0.210} & 79.0\% & \textbf{0.401}\\
+AnyDoor~\cite{chen2023anydoor} & 0.180 & 76.3\% & 0.529\\
+AnyDoor+\textbf{\sname} & 0.189( {\color{red}+5\%}) & \textbf{79.9\%}( {\color{red}+4.7\%}) & 0.452({\color{red}+14.5\%})\\
+\textbf{\sname{} (ours)}              & \textbf{73.9\%}/\textbf{75.6\%} & \textbf{0.208} & \textbf{0.802} \\
+\bottomrule
+\end{tabular}
+\vspace{-2mm}
+\end{table}

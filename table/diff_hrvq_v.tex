@@ -1,0 +1,25 @@
+\begin{table}[t]
+    % \resizebox{\linewidth}{!}{
+    \caption{不同层的层次化残差对结果的影响}
+    \label{tab:diff_hrvq_v} 
+    \centering
+    \resizebox{0.7\linewidth}{!}{
+        \begin{tabular}{lcccccccc}
+            \toprule [1pt]
+            \noalign{\smallskip}
+            \multirow{2}{*}{Method}& \multicolumn{4}{c}{HRVQ} & \multicolumn{4}{c}{RVQ} \\  \cmidrule(lr){2-5} \cmidrule(lr){6-9}
+            \noalign{\smallskip}
+            & $all\downarrow$ & $body\downarrow$ & $hand\downarrow$ & $face\downarrow$ & $all\downarrow$ & $body\downarrow$ & $hand\downarrow$ & $face\downarrow$ \\
+            \noalign{\smallskip}\midrule [0.5pt]
+            \noalign{\smallskip}
+            V=1 & 104.859 & 67.470 & 103.092 &1.990 &126.071&86.234&120.795&3.224\\
+            V=2 & 98.180 & 61.156 & 97.365 & 1.694 &121.383&81.795&116.148&2.856 \\
+            V=3 & 92.777 & 55.533 & 93.776 & 1.502 &111.660&78.883&106.972&2.618 \\
+            V=4 & 85.035 & 51.360 & 85.973 & 1.291 &113.503&72.570&111.069&2.475\\
+            V=5 & 83.679 & 47.895 & 85.085 & 1.153 &108.983&71.831&106.836&2.379\\
+            V=6 & \textbf{79.518} & 46.806 & \textbf{80.015} & 1.117 & 105.846 &65.947&105.208&2.223 \\
+            V=7 & 84.080 & \textbf{46.573} & 86.218 & \textbf{1.007} & \textbf{101.209}&\textbf{63.457}&\textbf{99.794}&\textbf{2.098} \\
+            \bottomrule [1pt] 
+            \noalign{\smallskip}
+    \end{tabular}}
+\end{table}

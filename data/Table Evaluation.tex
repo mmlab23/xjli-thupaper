@@ -1,0 +1,49 @@
+\begin{table}[!t]
+  \centering
+  \caption{三线表示例}
+  \begin{tabular}{c|c|ccc}
+  \hline
+   \makecell[c]{Model\\@Dataset}& Skew Ratio &
+   $\Bar{\delta}$ & \textbf{DAGC} & Top-$\delta$\\
+   \hline
+   \hline
+    \multirow{9}*{\makecell[c]{CNN\\@CIFAR-$10$}} & \multirow{3}*{$10$} & $10\%$ & $\mathbf{73.3}\% \pm \mathbf{0.3}\%$ & $73.2\% \pm 0.2\%$\\
+    
+    & & $1\% $& $\mathbf{72.3}\% \pm \mathbf{0.5}\% $ & $72.2\% \pm 0.3\%$ \\
+
+    & & $0.1\% $ & $\mathbf{67.5}\% \pm \mathbf{0.2}\%$ & $66.5\% \pm 0.2\%$ \\
+
+    & \multirow{3}*{$100$} & $10\% $& $ \mathbf{72.7}\% \pm \mathbf{0.2}\% $ & $72.6\% \pm 0.7\% $ \\
+%\cline{3-5}
+    & & $1\%$ & $ \mathbf{72.0}\% \pm \mathbf{0.2}\% $ & $71.7\% \pm 0.3\% $\\
+%\cline{3-5}
+    & & $0.1\%$ & $ \mathbf{68.0}\% \pm \mathbf{0.1}\% $ & $65.9\% \pm 0.2\%$\\
+%\cline{2-5}
+    &\multirow{3}*{$1000$} & $10\% $& $72.6\% \pm 0.4\%$ & $ \mathbf{73.3}\% \pm \mathbf{0.1} $ \% \\
+%\cline{3-5}
+    & & $1\%$ & $ \mathbf{71.7}\% \pm \mathbf{0.3}\% $ & $71.7\% \pm 0.4\%$ \\
+%\cline{3-5}
+    & & $0.1\%$ & $ \mathbf{67.2}\% \pm \mathbf{0.1}\% $ & $65.9\% \pm 0.3\%$ \\
+    \hline
+    \multirow{9}*{\makecell[c]{LSTM\\@SCs}} & \multirow{3}*{$10$} & $10\%$ & $ \mathbf{77.5}\% \pm \mathbf{0.4}\% $ & $76.8\% \pm 0.4\%$\\
+%\cline{3-5}
+& & $1\% $& $62.6\% \pm 1.0\% $& $ \mathbf{64.4} \% \pm \mathbf{0.6}\% $ \\
+%\cline{3-5}
+& & $0.1\%$ & $27.5$\% $\pm$ $0.3$\% & $ \mathbf{30.4}\% \pm \mathbf{0.3}\% $ \\
+%\cline{2-5}
+& \multirow{3}*{$100$} & $10\% $& $ \mathbf{79.0}\% \pm \mathbf{0.6}\% $ & $77.4\% \pm 0.4\%$ \\
+%\cline{3-5}
+& & $1\%$ & $ \mathbf{67.7}\% \pm \mathbf{1}\% $ & $64.3\% \pm 1.0\% $\\
+%\cline{3-5}
+& & $0.1\%$ & $35.7\% \pm 0.5\% $& $ \mathbf{36.1}\% \pm \mathbf{0.4}\% $\\
+%\cline{2-5}
+&\multirow{3}*{$1000$} & $10\%$ & $ \mathbf{78.1}\% \pm \mathbf{0.8}\% $  & $77.5\% \pm 0.3\%$ \\
+%\cline{3-5}
+& & $1\%$ & $ \mathbf{66.4}\% \pm \mathbf{0.7}\% $ & $65.0\% \pm 0.2\% $\\
+%\cline{3-5}
+& & $0.1\%$ & $ \mathbf{39.4}\% \pm \mathbf{0.3}\% $ & $24.8\% \pm  0.3\% $\\
+    \bottomrule
+    
+  \end{tabular}
+  \label{tab:three-line}
+\end{table}
