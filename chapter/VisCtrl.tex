@@ -11,17 +11,17 @@
 \item \textbf{多视角一致性不足，泛化能力受限。} 现有方法大多针对单视角或静态图像设计，难以在跨视角或时序生成过程中保持外观与结构的多视角一致性。当直接应用于视频或三维场景编辑任务时，往往会出现外观漂移、视角不连续等问题，限制了其向更复杂视觉表征形式的泛化能力。
 \end{itemize}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/show_res.pdf}
-  % \vspace{-5mm}
-  \caption{VisCtrl方法在二维图像中的编辑效果示例}
-  % \vspace{-5mm}
-  \label{fig:visctrl_show_res}
-\end{figure}
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/show_res.pdf}
+%   % \vspace{-5mm}
+%   \caption{VisCtrl方法在二维图像中的编辑效果示例}
+%   % \vspace{-5mm}
+%   \label{fig:visctrl_show_res}
+% \end{figure}
 
-为应对上述挑战，本章提出视角迭代自注意力控制（View Iterative Self-Attention Control，VisCtrl），一种简洁且有效的个性化视觉编辑框架，利用自注意力机制将参考图像中的个性化主体特征注入到目标图像中。具体而言，本章首先通过DDIM反演~\cite{song2021ddim}分别获得参考图像与目标图像对应的初始噪声；随后在去噪重建过程中，采用迭代式自注意力机制，将用户指定主体的特征逐步注入目标图像，同时利用交叉注意力机制维持目标图像的整体结构不变。进一步地，本章提出特征渐进采样（Feature Gradually Sampling，FGS）策略以支持复杂视觉编辑：该策略通过对参考图像的潜变量特征进行随机采样，实现三维多视角编辑。值得注意的是，在无需重训练、仅使用单张参考图像的条件下，本章所提方法仍可通过较少的去噪步数获得如图~\ref{fig:visctrl_show_res}所示的优异结果。
-
+为应对上述挑战，本章提出视角迭代自注意力控制（View Iterative Self-Attention Control，VisCtrl），一种简洁且有效的个性化视觉编辑框架，利用自注意力机制将参考图像中的个性化主体特征注入到目标图像中。具体而言，本章首先通过DDIM反演~\cite{song2021ddim}分别获得参考图像与目标图像对应的初始噪声；随后在去噪重建过程中，采用迭代式自注意力机制，将用户指定主体的特征逐步注入目标图像，同时利用交叉注意力机制维持目标图像的整体结构不变。进一步地，本章提出特征渐进采样（Feature Gradually Sampling，FGS）策略以支持复杂视觉编辑：该策略通过对参考图像的潜变量特征进行随机采样，实现三维多视角编辑。值得注意的是，在无需重训练、仅使用单张参考图像的条件下，本章所提方法仍可通过较少的去噪步数获得。
+% 如图~\ref{fig:visctrl_show_res}所示的优异结果。
 通过大量实验验证了所提方法的有效性，并展示了其向其他个性化视觉任务拓展的潜力。本章的主要贡献总结如下：
 
 \begin{itemize}
@@ -45,13 +45,13 @@ L_{LDM} := \mathbb{E}_{z_0 \sim \encoder(\inputimage), \textprompt, \epsilon \si
 
 DDIM反演~\cite{song2021ddim}的目标是在给定文本条件$\textprompt$的情况下，寻找一个初始噪声$z_T$，使其能够重建输入潜变量代码$z_0$。由于本章的目标是结合参考图像实现对给定图像的精确重建，因此采用确定性DDIM采样~\cite{song2021ddim}：
 \begin{equation}
-z_{t+1} = \sqrt{\bar{\alpha}*{t+1}}f*\theta(z_t,t,\textembedding) + \sqrt{1-\bar{\alpha}*{t+1}} \model(z_t,t,\textembedding)
+z_{t+1} = \sqrt{\bar{\alpha}*{t+1}}f*\theta(z_t,t,\textembedding) + \sqrt{1-\bar{\alpha}*{t+1}} \model(z_t,t,\textembedding)，
 \label{eq:ddim}
 \end{equation}
-其中$\bar{\alpha}*{t+1}$为DDIM~\cite{song2021ddim}中定义的噪声缩放系数，$f_\theta(z_t,t,\textembedding)$用于预测最终去噪后的潜变量代码$z_0$，其形式为
-$
+其中$\bar{\alpha}*{t+1}$为DDIM~\cite{song2021ddim}中定义的噪声缩放系数，$f_\theta(z_t,t,\textembedding)$用于预测最终去噪后的潜变量代码$z_0$，其形式为：
+\begin{equation}
 f_\theta(z_t,t,\textembedding) = \Big[z_t - \sqrt{1-\bar{\alpha}_t} \model(z_t,t,\textembedding) \Big] / {\sqrt{\bar{\alpha}_t}}.
-$
+\end{equation}
 
 潜空间扩散模型中的注意力机制由U-Net中一系列基础模块构成，每个基础模块通常包含残差块~\cite{he2016deep}、自注意力模块以及交叉注意力模块~\cite{vaswani2017attention}。注意力机制可形式化为：
 \begin{equation}
@@ -68,7 +68,7 @@ $
   \centering
     \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/framework.pdf}
   % \vspace{-1mm}
-  \caption{VisCtrl视觉生成与编辑算法框架。该架构包含参考图像分支（上）与目标图像分支（下），通过迭代式自注意力控制实现个性化特征注入。}
+  \caption{VisCtrl视觉生成与编辑算法框架}
   % \vspace{-3mm}
   \label{fig:visctrl_pipeline}
 \end{figure}
@@ -85,7 +85,7 @@ Z^**{(n+1)} = Z^t*{0(n)}, \quad 1 < n < N
 
 \input{table/alg}
 
-其中，算法~\ref{alg:visctrl}中的编辑函数Edit可形式化为：
+算法~\ref{alg:visctrl}中的编辑函数Edit可形式化为：
 
 \begin{equation}
     \label{eq:visctrl_edit}
@@ -99,24 +99,24 @@ Z^**{(n+1)} = Z^t*{0(n)}, \quad 1 < n < N
 
 其中，$S$与$L$分别表示开始注入的时间步与层索引。
 
-\begin{figure}[!th]
-  \centering
-    \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/diff_step.pdf}
-  % \vspace{-1mm}
-  \caption{操控不同去噪步数和网络层索引的编辑结果对比}
-  % \vspace{-3mm}
-  \label{fig:visctrl_diff_step}
-\end{figure}
+% \begin{figure}[!th]
+%   \centering
+%     \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/diff_step.pdf}
+%   % \vspace{-1mm}
+%   \caption{操控不同去噪步数和网络层索引的编辑结果对比}
+%   % \vspace{-3mm}
+%   \label{fig:visctrl_diff_step}
+% \end{figure}
 
 
 \section{特征渐进采样策略}
-当将VisCtrl方法应用于复杂视觉场景（如视频编辑与三维编辑）中目标内容分布在多视角的任务时，将面临两个关键挑战。\textbf{（1）单参考图像的信息量有限：}在包含多种视角的复杂场景中，仅依赖单张参考图像往往因不同视角之间存在显著变化而导致生成结果模糊。这是因为从单张参考图像中检索到的有效信息不足，会使目标图像在迭代过程中逐渐丢失其原始结构。一旦结构被破坏便难以恢复，因为缺失的结构信息已不再存在于目标图像的查询特征中，具体可参见图~\ref{fig:visctrl_gfs_fusion}。\textbf{（2）多参考图像之间的一致性注入：}当引入多张参考图像时，必须确保来自这些参考图像的信息注入保持一致。过于剧烈的差异会导致视频中出现抖动以及三维场景中出现伪影。
+当将VisCtrl方法应用于复杂视觉场景（如视频编辑与三维编辑）中目标内容分布在多视角的任务时，将面临两个关键挑战。\textbf{（1）单参考图像的信息量有限：}在包含多种视角的复杂场景中，仅依赖单张参考图像往往因不同视角之间存在显著变化而导致生成结果模糊。这是因为从单张参考图像中检索到的有效信息不足，会使目标图像在迭代过程中逐渐丢失其原始结构。一旦结构被破坏便难以恢复，因为缺失的结构信息已不再存在于目标图像的查询特征中，具体可参见图~\ref{fig:visctrl_gfs_fusion}，图中上排展示了将单张参考图像的特征注入源图像的过程，以及每次迭代中生成图像的变化。下排展示了使用特征渐进采样策略将多张参考图像的特征注入源图像的过程及其生成图像在各迭代步中的变化。\textbf{（2）多参考图像之间的一致性注入：}当引入多张参考图像时，必须确保来自这些参考图像的信息注入保持一致。过于剧烈的差异会导致视频中出现抖动以及三维场景中出现伪影。
 
 \begin{figure}[t]
   \centering
     \includegraphics[width=1.000\textwidth]{./figures/VisCtrl/gfs_fusion.pdf}
   % \vspace{-1mm}
-  \caption{特征渐进采样的消融实验。上排展示了将单张参考图像的特征注入源图像的过程，以及每次迭代中生成图像的变化。下排展示了使用特征渐进采样策略将多张参考图像的特征注入源图像的过程及其生成图像在各迭代步中的变化。}
+  \caption{特征渐进采样策略消融实验}
   % \vspace{-3mm}
   \label{fig:visctrl_gfs_fusion}
 \end{figure}
@@ -130,7 +130,7 @@ Z^t_{T(n+1)} = \alpha * \mathcal{F}(Z^**{(n)}, \textprompt_t) + (1-\alpha)*Z^t*{
 
 \section{实验设计与结果分析}
 \subsection{实验配置}
-本章在多种实验场景中基于Stable Diffusion v1.5~\cite{Rombach_2022_CVPR_stablediffusion}验证了所提方法的有效性。实验中采用的分割模型为LangSAM，该算法构建于SAM~\cite{kirillov2023segany}与GroundingDINO~\cite{liu2023grounding}检测模型之上。所有实验均在单张NVIDIA V100 GPU上完成。
+本章在多种实验场景中基于Stable Diffusion v1.5~\cite{Rombach_2022_CVPR_stablediffusion}验证了所提方法的有效性。实验中采用的分割模型为SAM~\cite{kirillov2023segany}与GroundingDINO~\cite{liu2023grounding}检测模型。所有实验均在单张NVIDIA V100 GPU上完成。
 
 \textbf{二维图像编辑的配置。} AnyDoor~\cite{chen2023anydoor}与Paint-by-Example~\cite{yang2022paint}属于基于模型的方法，需要在大规模数据集上进行充分微调。实验中使用了其各自论文中描述的默认模型与参数设置：给定一张源图像及其掩码，参考图像会被插入到对应的掩码区域中。Photoswap~\cite{gu2023photoswap}与VisCtrl属于基于注意力的方法，通过操控U-Net中的注意力机制实现图像编辑。然而，与Photoswap不同的是，Photoswap需要通过Dreambooth~\cite{ruiz2022dreambooth}从参考图像中学习新概念，而VisCtrl不需要任何额外的训练或学习过程。为保证公平性，由于VisCtrl仅使用一张参考图像，Photoswap中同样仅使用单张图像来学习新概念，其Dreambooth训练步数设置为1000，其余参数保持默认。对于本章方法，加噪与去噪步数均设置为$T=5$，无分类器引导系数设置为$\omega=6$，迭代次数设置为$N=5$。首先使用DDIM反演~\cite{song2021ddim}将参考图像与目标图像均转换为初始噪声，然后进行去噪并迭代直至收敛。增大步数能够注入并生成更多细节，但不宜设置过大，以避免引入DDIM反演带来的显著偏置。通常而言，在初始迭代中可以设置较高的步数以捕获更多细节，而在后续迭代中去噪步数保持为5。该方法具有很高的效率，一般在三次迭代内即可收敛并获得令人满意的结果。需要注意的是，在二维图像实验中仅使用了一张参考图像。
 
