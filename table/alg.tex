@@ -1,31 +1,25 @@
-% \begin{wrapfigure}{r}{1.0\textwidth}
-% \vspace{-5mm}
-% \hspace{2mm}
-% {
 \begin{algorithm}[H]
 \SetAlgoLined
-\textbf{Input:}The reference images $\{I_s\}_1^N$ and corresponding prompt $\textprompt_s$, a target image$I_t$ and corresponding prompt $\textprompt_t$.\\
+\textbf{输入：}参考图像集 $\{I_s\}_1^N$ 及其对应的文本提示 $\textprompt_s$，目标图像 $I_t$ 及其对应的文本提示 $\textprompt_t$。\\
 
-\textbf{Output:} Edited latent map $z^t_0$. \\
-$\{z^s_T\}_1^N\leftarrow \text{DDIMInversion}(\encoder(\{I_s\}_1^N),\textprompt_s)$;\\
-$z^*=\encoder(I_t)$;\\
-$z^t_T\leftarrow \text{DDIMInversion}(z^*,\textprompt_t)$;\\
+\textbf{输出：}编辑后的潜在特征图 $z^t_0$。 \\
+$\{z^s_T\}_1^N\leftarrow \text{DDIM逆过程}(\encoder(\{I_s\}_1^N),\textprompt_s)$；\\
+$z^*=\encoder(I_t)$；\\
+$z^t_T\leftarrow \text{DDIM逆过程}(z^*,\textprompt_t)$；\\
 \For{$n=N,N-1,\ldots,1$}{
-$z^t_T \leftarrow \alpha * \text{DDIMInversion}(z^*,\textprompt_t) + (1-\alpha)*z^t_T$;\\
-$z^s_T=\text{DataSampler}(\{z^s_T\}_1^N)$;\\
+$z^t_T \leftarrow \alpha \cdot \text{DDIM逆过程}(z^*,\textprompt_t) + (1-\alpha) \cdot z^t_T$；\\
+$z^s_T=\text{数据采样器}(\{z^s_T\}_1^N)$；\\
  \For{$t=T,T-1,\ldots,1$}{
-    $\epsilon_s, \{Q_s, K_s, V_s\}\leftarrow \epsilon_\theta(z^s_t, P_s, t)$;  \\ 
-    $z^s_{t-1} \leftarrow \text{DDIMSampler}(z^{s}_{t}, \epsilon_s)$;\\
-    $\{Q_t, K_t, V_t\} \leftarrow \epsilon_\theta(z_t,P,t)$;\\
-    $\{Q_t^*, K_t^*, V_t^*\} \hspace{-1mm}\leftarrow \text{Edit}(\{Q_t,K_t,V_t\}, \{Q_s, K_s, V_s\})$;\\
-    $\epsilon_t = \epsilon_\theta(z_t, P, t; \{Q_t^*, K_t^*, V_t^*\})$;\\
-    $z^t_{t-1} \leftarrow \text{DDIMSampler}(z_t^t, \epsilon_t)$;\\
+    $\epsilon_s, \{Q_s, K_s, V_s\}\leftarrow \epsilon_\theta(z^s_t, P_s, t)$；  \\ 
+    $z^s_{t-1} \leftarrow \text{DDIM采样器}(z^{s}_{t}, \epsilon_s)$；\\
+    $\{Q_t, K_t, V_t\} \leftarrow \epsilon_\theta(z_t,P,t)$；\\
+    $\{Q_t^*, K_t^*, V_t^*\} \hspace{-1mm}\leftarrow \text{注意力编辑}(\{Q_t,K_t,V_t\}, \{Q_s, K_s, V_s\})$；\\
+    $\epsilon_t = \epsilon_\theta(z_t, P, t; \{Q_t^*, K_t^*, V_t^*\})$；\\
+    $z^t_{t-1} \leftarrow \text{DDIM采样器}(z_t^t, \epsilon_t)$；\\
  }
- $z^* =z^t_0$;\\
+ $z^* =z^t_0$；\\
 }
- \textbf{Return} $z^t_0$ \\
- \caption{View Iterative Self-Attention Control}
+ \textbf{返回} $z^t_0$ \\
+ \caption{视角迭代自注意力控制算法}
 \label{alg:visctrl}
 \end{algorithm}
-% }
-% \end{wrapfigure}
